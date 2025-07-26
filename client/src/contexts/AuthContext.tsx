@@ -55,6 +55,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       if (session?.user) {
+        // Check cache first before fetching
+        const cachedProfile = localStorage.getItem('user_profile');
+        if (cachedProfile) {
+          try {
+            const profileData = JSON.parse(cachedProfile);
+            setUser(profileData);
+            setLoading(false);
+            return;
+          } catch (error) {
+            localStorage.removeItem('user_profile');
+          }
+        }
         await fetchUserProfile(session.user.id);
       } else {
         setUser(null);
@@ -68,6 +80,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('Fetching user profile for ID:', userId);
+      
+      // Always check cache first and use it if available
+      const cachedProfile = localStorage.getItem('user_profile');
+      if (cachedProfile) {
+        try {
+          const profileData = JSON.parse(cachedProfile);
+          console.log('Using cached profile (skipping API call):', profileData);
+          setUser(profileData);
+          return;
+        } catch (error) {
+          console.error('Error parsing cached profile:', error);
+          localStorage.removeItem('user_profile');
+        }
+      }
       
       // First check if we have a local mapping
       const mapping = localStorage.getItem('supabase_user_mapping');
@@ -86,17 +112,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await response.json();
         console.log('User profile fetched successfully:', userData);
         setUser(userData);
+        // Cache the successful fetch
+        localStorage.setItem('user_profile', JSON.stringify(userData));
       } else {
         console.log('User profile not found, response status:', response.status);
-        
-        // Check if we have cached profile data
-        const cachedProfile = localStorage.getItem('user_profile');
-        if (cachedProfile) {
-          const profileData = JSON.parse(cachedProfile);
-          console.log('Using cached profile:', profileData);
-          setUser(profileData);
-          return;
-        }
         
         // If user doesn't exist, try to get user info from Supabase session
         const { data: { session } } = await supabase.auth.getSession();
@@ -107,6 +126,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      // If there's an error, check cache as fallback
+      const cachedProfile = localStorage.getItem('user_profile');
+      if (cachedProfile) {
+        try {
+          const profileData = JSON.parse(cachedProfile);
+          console.log('Using cached profile as fallback:', profileData);
+          setUser(profileData);
+        } catch (parseError) {
+          localStorage.removeItem('user_profile');
+        }
+      }
     }
   };
 

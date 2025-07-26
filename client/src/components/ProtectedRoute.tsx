@@ -18,8 +18,8 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         },
         body: JSON.stringify({
           email: 'demo@mentorpanel.com',
-          name: 'Demo User',
-          role: 'manager',
+          name: 'Demo Manager',
+          role: 'manager', 
           domainRole: 'frontend',
         }),
       });
@@ -28,6 +28,22 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
         const userData = await response.json();
         console.log('Demo user created:', userData);
         localStorage.setItem('user_profile', JSON.stringify(userData));
+        localStorage.setItem('demo_mode', 'true');
+        window.location.reload();
+      } else {
+        // If user already exists, just set up demo mode with existing user
+        const demoUser = {
+          "email": "demo@mentorpanel.com",
+          "name": "Demo Manager", 
+          "role": "manager",
+          "domainRole": "frontend",
+          "id": "demo-user-id",
+          "avatarUrl": null,
+          "createdAt": new Date().toISOString(),
+          "updatedAt": new Date().toISOString()
+        };
+        localStorage.setItem('user_profile', JSON.stringify(demoUser));
+        localStorage.setItem('demo_mode', 'true');
         window.location.reload();
       }
     } catch (error) {
