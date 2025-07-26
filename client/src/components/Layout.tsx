@@ -16,6 +16,7 @@ import {
   X
 } from 'lucide-react';
 import { useState } from 'react';
+import TopBar from './TopBar';
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -27,9 +28,11 @@ const navigation = [
 
 interface LayoutProps {
   children: React.ReactNode;
+  theme: string;
+  setTheme: (theme: string) => void;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, theme, setTheme }: LayoutProps) {
   const [location] = useLocation();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
@@ -144,17 +147,8 @@ export default function Layout({ children }: LayoutProps) {
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar for mobile */}
-        {isMobile && (
-          <header className="flex items-center justify-between p-4 border-b border-border bg-card lg:hidden">
-            <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
-              <Menu className="h-5 w-5" />
-            </Button>
-            <span className="font-semibold text-foreground">MentorBuddy</span>
-            <div className="w-9" />
-          </header>
-        )}
-
+        {/* Top bar for all screens */}
+        <TopBar theme={theme} setTheme={setTheme} />
         {/* Page content */}
         <main className="flex-1 overflow-auto">
           {children}

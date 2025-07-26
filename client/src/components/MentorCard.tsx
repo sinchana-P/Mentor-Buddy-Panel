@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { MessageCircle } from 'lucide-react';
 import { useLocation } from 'wouter';
+import MessageModal from './MessageModal';
 
 interface MentorCardProps {
   mentor: {
@@ -12,7 +16,7 @@ interface MentorCardProps {
       name: string;
       domainRole: string;
       avatarUrl?: string;
-    };
+    } | null;
     expertise: string;
     experience: string;
     responseRate: number;
@@ -26,6 +30,7 @@ interface MentorCardProps {
 
 export default function MentorCard({ mentor }: MentorCardProps) {
   const [, setLocation] = useLocation();
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
   const handleClick = () => {
     setLocation(`/mentors/${mentor.id}`);
@@ -51,16 +56,16 @@ export default function MentorCard({ mentor }: MentorCardProps) {
         <CardContent className="p-6">
           <div className="text-center">
             <Avatar className="w-20 h-20 mx-auto mb-4">
-              <AvatarImage src={mentor.user.avatarUrl} alt={mentor.user.name} />
+              <AvatarImage src={mentor.user?.avatarUrl} alt={mentor.user?.name || 'Mentor'} />
               <AvatarFallback className="text-lg">
-                {mentor.user.name.split(' ').map(n => n[0]).join('')}
+                {mentor.user?.name ? mentor.user.name.split(' ').map(n => n[0]).join('') : 'M'}
               </AvatarFallback>
             </Avatar>
             
-            <h3 className="text-lg font-semibold mb-1">{mentor.user.name}</h3>
+            <h3 className="text-lg font-semibold mb-1">{mentor.user?.name || 'Unknown Mentor'}</h3>
             <p className="text-muted-foreground text-sm mb-2">{mentor.expertise}</p>
-            <Badge className={getDomainColor(mentor.user.domainRole)}>
-              {mentor.user.domainRole}
+            <Badge className={getDomainColor(mentor.user?.domainRole || 'unknown')}>
+              {mentor.user?.domainRole || 'Unknown'}
             </Badge>
           </div>
 
@@ -88,8 +93,35 @@ export default function MentorCard({ mentor }: MentorCardProps) {
             </div>
             <Progress value={mentor.responseRate} className="h-1" />
           </div>
+
+          <div className="mt-4 pt-4 border-t">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMessageModalOpen(true);
+              }}
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Message
+            </Button>
+          </div>
         </CardContent>
       </Card>
+
+      <MessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => setIsMessageModalOpen(false)}
+        recipient={{
+          id: mentor.id,
+          name: mentor.user?.name || 'Unknown Mentor',
+          avatarUrl: mentor.user?.avatarUrl,
+          role: 'mentor',
+          domainRole: mentor.user?.domainRole || 'unknown'
+        }}
+      />
     </motion.div>
   );
 }

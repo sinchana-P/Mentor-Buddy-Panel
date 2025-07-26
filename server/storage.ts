@@ -21,6 +21,7 @@ export interface IStorage {
   // User management
   getUser(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
 
@@ -32,19 +33,23 @@ export interface IStorage {
   getMentors(filters: { role?: string; status?: string; search?: string }): Promise<any[]>;
   getMentorById(id: string): Promise<any>;
   createMentor(mentor: InsertMentor): Promise<Mentor>;
+  updateMentor(id: string, updates: Partial<Mentor>): Promise<Mentor>;
   getMentorBuddies(mentorId: string, status?: string): Promise<any[]>;
 
   // Buddy management
   getBuddyById(id: string): Promise<any>;
+  getAllBuddies(filters?: { status?: string; domain?: string; search?: string }): Promise<any[]>;
   createBuddy(buddy: InsertBuddy): Promise<Buddy>;
   getBuddyTasks(buddyId: string): Promise<any[]>;
   getBuddyProgress(buddyId: string): Promise<any>;
   updateBuddyTopicProgress(buddyId: string, topicId: string, checked: boolean): Promise<any>;
   getBuddyPortfolio(buddyId: string): Promise<any[]>;
+  assignBuddyToMentor(buddyId: string, mentorId: string): Promise<any>;
 
   // Task management
   createTask(task: InsertTask): Promise<Task>;
   getTaskById(id: string): Promise<Task | undefined>;
+  getAllTasks(filters?: { status?: string; search?: string; buddyId?: string }): Promise<any[]>;
 
   // Submission management
   createSubmission(submission: InsertSubmission): Promise<Submission>;
@@ -55,6 +60,10 @@ export interface IStorage {
 
   // Progress tracking
   createBuddyTopicProgress(progress: InsertBuddyTopicProgress): Promise<BuddyTopicProgress>;
+
+  // Resource management
+  getAllResources(filters?: { category?: string; difficulty?: string; type?: string; search?: string }): Promise<any[]>;
+  createResource(resource: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -142,6 +151,10 @@ export class MemStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -320,6 +333,17 @@ export class MemStorage implements IStorage {
     return mentor;
   }
 
+  async updateMentor(id: string, updates: Partial<Mentor>): Promise<Mentor> {
+    const mentor = this.mentors.get(id);
+    if (!mentor) {
+      throw new Error('Mentor not found');
+    }
+    
+    const updatedMentor = { ...mentor, ...updates, updatedAt: new Date() };
+    this.mentors.set(id, updatedMentor);
+    return updatedMentor;
+  }
+
   async getMentorBuddies(mentorId: string, status?: string): Promise<any[]> {
     let buddies = Array.from(this.buddies.values())
       .filter(buddy => buddy.assignedMentorId === mentorId);
@@ -363,6 +387,53 @@ export class MemStorage implements IStorage {
       user,
       mentor: mentor ? { ...mentor, user: mentorUser } : null
     };
+  }
+
+  async getAllBuddies(filters?: { status?: string; domain?: string; search?: string }): Promise<any[]> {
+    let buddies = Array.from(this.buddies.values());
+
+    // Filter by status
+    if (filters?.status && filters.status !== 'all') {
+      buddies = buddies.filter(buddy => buddy.status === filters.status);
+    }
+
+    // Filter by domain
+    if (filters?.domain && filters.domain !== 'all') {
+      buddies = buddies.filter(buddy => {
+        const user = this.users.get(buddy.userId);
+        return user?.domainRole === filters.domain;
+      });
+    }
+
+    // Filter by search
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      buddies = buddies.filter(buddy => {
+        const user = this.users.get(buddy.userId);
+        return user?.name.toLowerCase().includes(searchTerm) ||
+               user?.email.toLowerCase().includes(searchTerm);
+      });
+    }
+
+    return buddies.map(buddy => {
+      const user = this.users.get(buddy.userId);
+      const mentor = buddy.assignedMentorId ? this.mentors.get(buddy.assignedMentorId) : null;
+      const mentorUser = mentor ? this.users.get(mentor.userId) : null;
+      
+      const buddyTasks = Array.from(this.tasks.values())
+        .filter(task => task.buddyId === buddy.id);
+      const completedTasks = buddyTasks.filter(task => task.status === 'completed').length;
+
+      return {
+        ...buddy,
+        user,
+        mentor: mentor ? { ...mentor, user: mentorUser } : null,
+        stats: {
+          completedTasks,
+          totalTasks: buddyTasks.length
+        }
+      };
+    });
   }
 
   async createBuddy(insertBuddy: InsertBuddy): Promise<Buddy> {
@@ -468,6 +539,23 @@ export class MemStorage implements IStorage {
     }));
   }
 
+  async assignBuddyToMentor(buddyId: string, mentorId: string): Promise<any> {
+    const buddy = this.buddies.get(buddyId);
+    if (!buddy) {
+      throw new Error('Buddy not found');
+    }
+    
+    const mentor = this.mentors.get(mentorId);
+    if (!mentor) {
+      throw new Error('Mentor not found');
+    }
+    
+    const updatedBuddy = { ...buddy, assignedMentorId: mentorId };
+    this.buddies.set(buddyId, updatedBuddy);
+    
+    return this.getBuddyById(buddyId);
+  }
+
   // Task methods
   async createTask(insertTask: InsertTask): Promise<Task> {
     const id = randomUUID();
@@ -484,6 +572,42 @@ export class MemStorage implements IStorage {
 
   async getTaskById(id: string): Promise<Task | undefined> {
     return this.tasks.get(id);
+  }
+
+  async getAllTasks(filters?: { status?: string; search?: string; buddyId?: string }): Promise<any[]> {
+    let tasks = Array.from(this.tasks.values());
+
+    // Filter by status
+    if (filters?.status && filters.status !== 'all') {
+      tasks = tasks.filter(task => task.status === filters.status);
+    }
+
+    // Filter by search
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      tasks = tasks.filter(task => 
+        task.title.toLowerCase().includes(searchTerm) ||
+        task.description.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    // Filter by buddyId
+    if (filters?.buddyId) {
+      tasks = tasks.filter(task => task.buddyId === filters.buddyId);
+    }
+
+    return tasks.map(task => {
+      const mentor = this.mentors.get(task.mentorId);
+      const buddy = this.buddies.get(task.buddyId);
+      const mentorUser = mentor ? this.users.get(mentor.userId) : null;
+      const buddyUser = buddy ? this.users.get(buddy.userId) : null;
+
+      return {
+        ...task,
+        mentor: mentor ? { ...mentor, user: mentorUser } : null,
+        buddy: buddy ? { ...buddy, user: buddyUser } : null
+      };
+    });
   }
 
   // Submission methods
@@ -532,6 +656,77 @@ export class MemStorage implements IStorage {
     this.buddyTopicProgress.set(id, progress);
     return progress;
   }
+
+  // Resource management
+  async getAllResources(filters?: { category?: string; difficulty?: string; type?: string; search?: string }): Promise<any[]> {
+    // Mock resources - in real app this would come from database
+    const mockResources = [
+      {
+        id: '1',
+        title: 'React Fundamentals',
+        description: 'Complete guide to React basics and core concepts',
+        type: 'course',
+        category: 'frontend',
+        url: 'https://react.dev/learn',
+        tags: ['react', 'javascript', 'frontend'],
+        difficulty: 'beginner',
+        duration: '4 hours',
+        author: 'React Team',
+        rating: 4.8,
+        isBookmarked: false
+      },
+      {
+        id: '2',
+        title: 'TypeScript Handbook',
+        description: 'Official TypeScript documentation and tutorials',
+        type: 'documentation',
+        category: 'frontend',
+        url: 'https://www.typescriptlang.org/docs/',
+        tags: ['typescript', 'javascript', 'frontend'],
+        difficulty: 'intermediate',
+        author: 'Microsoft',
+        rating: 4.9,
+        isBookmarked: true
+      }
+    ];
+
+    let resources = mockResources;
+
+    // Apply filters
+    if (filters?.category && filters.category !== 'all') {
+      resources = resources.filter(resource => resource.category === filters.category);
+    }
+
+    if (filters?.difficulty && filters.difficulty !== 'all') {
+      resources = resources.filter(resource => resource.difficulty === filters.difficulty);
+    }
+
+    if (filters?.type && filters.type !== 'all') {
+      resources = resources.filter(resource => resource.type === filters.type);
+    }
+
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      resources = resources.filter(resource =>
+        resource.title.toLowerCase().includes(searchTerm) ||
+        resource.description.toLowerCase().includes(searchTerm) ||
+        resource.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    return resources;
+  }
+
+  async createResource(resource: any): Promise<any> {
+    const id = randomUUID();
+    const newResource = {
+      ...resource,
+      id,
+      createdAt: new Date().toISOString(),
+      isBookmarked: false
+    };
+    return newResource;
+  }
 }
 
 import { DbStorage } from './db-storage';
@@ -548,7 +743,11 @@ async function initializeStorage(): Promise<IStorage> {
     console.log('[Storage] Database storage initialized successfully');
     
     // Add some initial data to database if tables are empty
-    await seedDatabaseData(dbStorage);
+    try {
+      await seedDatabaseData(dbStorage);
+    } catch (seedError) {
+      console.log('[Storage] Database already seeded or seeding failed, continuing...');
+    }
     
     return dbStorage;
   } catch (error) {
@@ -620,19 +819,23 @@ async function initializeStorage(): Promise<IStorage> {
 
 // Run database migrations
 async function runMigrations() {
-  const { migrate } = await import('drizzle-orm/node-postgres/migrator');
-  const { db } = await import('./db');
-  
-  console.log('[Storage] Running database migrations...');
-  await migrate(db, { migrationsFolder: './migrations' });
-  console.log('[Storage] Migrations completed successfully');
+  try {
+    const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+    const { db } = await import('./db');
+    
+    console.log('[Storage] Running database migrations...');
+    await migrate(db, { migrationsFolder: './migrations' });
+    console.log('[Storage] Migrations completed successfully');
+  } catch (error) {
+    console.log('[Storage] Migrations already applied or not needed');
+  }
 }
 
 // Seed database with initial data
 async function seedDatabaseData(dbStorage: DbStorage) {
   try {
-    // Check if user already exists
-    const existingUser = await dbStorage.getUser('1a11c298-2293-4654-ab53-bdc648218570');
+    // Check if data already exists by looking for test user
+    const existingUser = await dbStorage.getUserByEmail('test@example.com');
     if (existingUser) {
       console.log('[Storage] Database already seeded');
       return;
@@ -649,7 +852,7 @@ async function seedDatabaseData(dbStorage: DbStorage) {
     });
 
     // Create mentor profile
-    await dbStorage.createMentor({
+    const mentor = await dbStorage.createMentor({
       userId: testUser.id,
       expertise: 'Experienced frontend developer with React, TypeScript, JavaScript',
       experience: '5+ years in frontend development',
@@ -657,9 +860,18 @@ async function seedDatabaseData(dbStorage: DbStorage) {
       isActive: true
     });
 
-    // Create buddy
-    await dbStorage.createBuddy({
-      userId: testUser.id,
+    // Create buddy user
+    const buddyUser = await dbStorage.createUser({
+      email: 'buddy@example.com',
+      name: 'Test Buddy',
+      role: 'buddy',
+      domainRole: 'frontend'
+    });
+
+    // Create buddy profile
+    const buddy = await dbStorage.createBuddy({
+      userId: buddyUser.id,
+      assignedMentorId: mentor.id,
       status: 'active'
     });
 
@@ -684,8 +896,8 @@ async function seedDatabaseData(dbStorage: DbStorage) {
     await dbStorage.createTask({
       title: 'Build a Todo App',
       description: 'Create a simple todo application using React with add, edit, and delete functionality.',
-      mentorId: testUser.id,
-      buddyId: testUser.id, // Will need actual buddy ID
+      mentorId: mentor.id,
+      buddyId: buddy.id,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: 'pending'
     });
@@ -693,8 +905,8 @@ async function seedDatabaseData(dbStorage: DbStorage) {
     await dbStorage.createTask({
       title: 'Learn CSS Flexbox',
       description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
-      mentorId: testUser.id,
-      buddyId: testUser.id, // Will need actual buddy ID
+      mentorId: mentor.id,
+      buddyId: buddy.id,
       dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       status: 'in_progress'
     });

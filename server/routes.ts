@@ -14,6 +14,18 @@ import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
+  app.get("/api/users", async (req, res) => {
+    try {
+      console.log('[GET /api/users] Fetching all users...');
+      const users = await storage.getAllUsers();
+      console.log('[GET /api/users] Users found:', users.length);
+      res.json(users);
+    } catch (error) {
+      console.error('[GET /api/users] Error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/users/:id", async (req, res) => {
     try {
       console.log(`[GET /api/users/${req.params.id}] Looking for user...`);
@@ -79,9 +91,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/buddies", async (req, res) => {
     try {
       const { status, domain, search } = req.query;
-      const buddies = await storage.getMentorBuddies("mentor-1", status as string); // This would be dynamic
+      const buddies = await storage.getAllBuddies({
+        status: status as string,
+        domain: domain as string,
+        search: search as string
+      });
       res.json(buddies);
     } catch (error) {
+      console.error('Error fetching buddies:', error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -180,21 +197,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/buddies/:id/assign", async (req, res) => {
+    try {
+      const { mentorId } = req.body;
+      const buddy = await storage.assignBuddyToMentor(req.params.id, mentorId);
+      res.json(buddy);
+    } catch (error) {
+      console.error('Error assigning buddy to mentor:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Tasks routes
   app.get("/api/tasks", async (req, res) => {
     try {
-      const { status, search } = req.query;
-      // Get tasks for the current mentor (would be dynamic based on authenticated user)
-      const buddies = await storage.getMentorBuddies("mentor-1");
-      const allTasks = [];
-      
-      for (const buddy of buddies) {
-        const tasks = await storage.getBuddyTasks(buddy.id);
-        allTasks.push(...tasks);
-      }
-      
-      res.json(allTasks);
+      const { status, search, buddyId } = req.query;
+      const tasks = await storage.getAllTasks({
+        status: status as string,
+        search: search as string,
+        buddyId: buddyId as string
+      });
+      res.json(tasks);
     } catch (error) {
+      console.error('Error fetching tasks:', error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -272,6 +297,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Resources routes
+  app.get("/api/resources", async (req, res) => {
+    try {
+      const { category, difficulty, type, search } = req.query;
+      const resources = await storage.getAllResources({
+        category: category as string,
+        difficulty: difficulty as string,
+        type: type as string,
+        search: search as string
+      });
+      res.json(resources);
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/resources", async (req, res) => {
+    try {
+      console.log('[POST /api/resources] Creating new resource:', req.body);
+      const resource = await storage.createResource(req.body);
+      console.log('[POST /api/resources] Resource created:', resource.id);
+      res.status(201).json(resource);
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      res.status(500).json({ message: 'Failed to create resource' });
+    }
+  });
+
   // Mentor routes
   app.get("/api/mentors", async (req, res) => {
     try {
@@ -308,6 +362,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid mentor data", errors: error.errors });
       }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/mentors/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const mentor = await storage.updateMentor(req.params.id, updates);
+      res.json(mentor);
+    } catch (error) {
+      console.error('Error updating mentor:', error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

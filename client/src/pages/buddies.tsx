@@ -92,8 +92,8 @@ export default function BuddiesPage() {
   };
 
   const filteredBuddies = buddies.filter(buddy => {
-    const matchesSearch = buddy.user.name.toLowerCase().includes(search.toLowerCase()) ||
-                         buddy.user.email.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = buddy?.user?.name.toLowerCase().includes(search.toLowerCase()) ||
+                         buddy?.user?.email.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || buddy.status === statusFilter;
     const matchesDomain = domainFilter === 'all' || buddy.domainRole === domainFilter;
     

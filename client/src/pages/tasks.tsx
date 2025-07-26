@@ -202,7 +202,7 @@ export default function TasksPage() {
                             <SelectContent>
                               {Array.isArray(buddies) && buddies.map((buddy: any) => (
                                 <SelectItem key={buddy.id} value={buddy.id}>
-                                  {buddy.user?.name} ({buddy.domainRole})
+                                  {buddy.user?.name || 'Unknown Buddy'} ({buddy.user?.domainRole || 'Unknown'})
                                 </SelectItem>
                               ))}
                             </SelectContent>

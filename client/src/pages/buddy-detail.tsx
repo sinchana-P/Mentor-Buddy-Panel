@@ -26,9 +26,50 @@ export default function BuddyDetailPage() {
   });
 
   const { data: tasks = [] } = useQuery({
-    queryKey: ['/api/buddies', id, 'tasks'],
+    queryKey: ['/api/tasks', { buddyId: id }],
     enabled: !!id,
   });
+
+  // Mock data for demonstration - in real app this would come from API
+  const mockTasks: any[] = [
+    {
+      id: '1',
+      title: 'React Fundamentals',
+      description: 'Learn React basics including components, props, and state management',
+      status: 'in_progress',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+      submissions: []
+    },
+    {
+      id: '2',
+      title: 'TypeScript Basics',
+      description: 'Introduction to TypeScript types, interfaces, and generics',
+      status: 'pending',
+      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date().toISOString(),
+      submissions: []
+    },
+    {
+      id: '3',
+      title: 'State Management with Redux',
+      description: 'Learn Redux for global state management in React applications',
+      status: 'completed',
+      dueDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString(),
+      submissions: [
+        {
+          id: '1',
+          githubLink: 'https://github.com/example/react-redux-demo',
+          deployedUrl: 'https://react-redux-demo.vercel.app',
+          notes: 'Completed the Redux tutorial and built a simple counter app',
+          feedback: 'Great work! The implementation follows Redux best practices.'
+        }
+      ]
+    }
+  ];
+
+  const displayTasks = (tasks as any[]).length > 0 ? tasks as any[] : mockTasks;
 
   const { data: progress } = useQuery({
     queryKey: ['/api/buddies', id, 'progress'],
@@ -39,6 +80,44 @@ export default function BuddyDetailPage() {
     queryKey: ['/api/buddies', id, 'portfolio'],
     enabled: !!id,
   });
+
+  // Mock progress data
+  const mockProgress = {
+    percentage: 65,
+    topics: [
+      { id: '1', name: 'React Fundamentals', checked: true },
+      { id: '2', name: 'Component Lifecycle', checked: true },
+      { id: '3', name: 'State Management', checked: true },
+      { id: '4', name: 'TypeScript Basics', checked: false },
+      { id: '5', name: 'Redux Toolkit', checked: false },
+      { id: '6', name: 'Testing with Jest', checked: false }
+    ]
+  };
+
+  // Mock portfolio data
+  const mockPortfolio = [
+    {
+      id: '1',
+      title: 'React Todo App',
+      description: 'A simple todo application built with React and TypeScript',
+      completedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      technologies: ['React', 'TypeScript', 'CSS'],
+      githubLink: 'https://github.com/example/react-todo',
+      deployedUrl: 'https://react-todo-demo.vercel.app'
+    },
+    {
+      id: '2',
+      title: 'Redux Counter App',
+      description: 'Counter application demonstrating Redux state management',
+      completedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      technologies: ['React', 'Redux', 'TypeScript'],
+      githubLink: 'https://github.com/example/redux-counter',
+      deployedUrl: 'https://redux-counter-demo.vercel.app'
+    }
+  ];
+
+  const displayProgress = progress || mockProgress;
+  const displayPortfolio = (portfolio as any[]).length > 0 ? portfolio as any[] : mockPortfolio;
 
   const updateProgressMutation = useMutation({
     mutationFn: ({ topicId, checked }: { topicId: string; checked: boolean }) =>
@@ -125,7 +204,7 @@ export default function BuddyDetailPage() {
 
           <TabsContent value="tasks" className="space-y-4">
             <div className="grid gap-4">
-              {tasks.map((task: any) => (
+              {displayTasks.map((task: any) => (
                 <Card key={task.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -198,20 +277,20 @@ export default function BuddyDetailPage() {
                 </p>
               </CardHeader>
               <CardContent>
-                {progress && (
+                {displayProgress && (
                   <div className="space-y-6">
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium">Overall Progress</span>
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {progress.percentage}%
+                          {displayProgress.percentage}%
                         </span>
                       </div>
-                      <Progress value={progress.percentage} className="h-2" />
+                      <Progress value={displayProgress.percentage} className="h-2" />
                     </div>
 
                     <div className="space-y-3">
-                      {progress.topics?.map((topic: any) => (
+                      {displayProgress.topics?.map((topic: any) => (
                         <div key={topic.id} className="flex items-center space-x-3">
                           <Checkbox
                             checked={topic.checked}
@@ -235,7 +314,7 @@ export default function BuddyDetailPage() {
 
           <TabsContent value="portfolio" className="space-y-4">
             <div className="grid gap-6">
-              {portfolio.map((project: any) => (
+              {displayPortfolio.map((project: any) => (
                 <Card key={project.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle>{project.title}</CardTitle>
@@ -274,7 +353,7 @@ export default function BuddyDetailPage() {
                 </Card>
               ))}
 
-              {portfolio.length === 0 && (
+              {displayPortfolio.length === 0 && (
                 <div className="text-center py-8">
                   <GitBranch className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No projects yet</h3>

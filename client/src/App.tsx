@@ -16,9 +16,17 @@ import BuddyTimelinePage from "@/pages/buddy-timeline";
 import BuddiesPage from "@/pages/buddies";
 import BuddyDetailPage from "@/pages/buddy-detail";
 import TasksPage from "@/pages/tasks";
+import SettingsPage from "@/pages/settings";
+import AnalyticsPage from "@/pages/analytics";
+import ResourcesPage from "@/pages/resources";
 import NotFound from "@/pages/not-found";
 
-function Router() {
+interface AppProps {
+  theme: string;
+  setTheme: (theme: string) => void;
+}
+
+function Router({ theme, setTheme }: AppProps) {
   return (
     <AnimatePresence mode="wait">
       <Switch>
@@ -28,7 +36,7 @@ function Router() {
         {/* Protected Routes */}
         <Route path="/" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -43,7 +51,7 @@ function Router() {
         
         <Route path="/dashboard" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -58,7 +66,7 @@ function Router() {
         
         <Route path="/mentors" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -73,7 +81,7 @@ function Router() {
         
         <Route path="/buddies" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -88,7 +96,7 @@ function Router() {
 
         <Route path="/buddies/:id" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -103,7 +111,7 @@ function Router() {
 
         <Route path="/tasks" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -116,9 +124,54 @@ function Router() {
           </ProtectedRoute>
         )} />
 
+        <Route path="/resources" component={() => (
+          <ProtectedRoute>
+            <Layout theme={theme} setTheme={setTheme}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <ResourcesPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/analytics" component={() => (
+          <ProtectedRoute>
+            <Layout theme={theme} setTheme={setTheme}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AnalyticsPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/settings" component={() => (
+          <ProtectedRoute>
+            <Layout theme={theme} setTheme={setTheme}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <SettingsPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
         <Route path="/mentors/:id" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -133,7 +186,7 @@ function Router() {
         
         <Route path="/buddies/:id" component={() => (
           <ProtectedRoute>
-            <Layout>
+            <Layout theme={theme} setTheme={setTheme}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -153,13 +206,13 @@ function Router() {
   );
 }
 
-function App() {
+function App({ theme, setTheme }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          <Router />
+          <Router theme={theme} setTheme={setTheme} />
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>

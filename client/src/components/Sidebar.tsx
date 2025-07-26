@@ -13,7 +13,9 @@ import {
   BarChart3, 
   Users, 
   X,
-  LogOut 
+  LogOut,
+  BookOpen,
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +24,9 @@ const navigation = [
   { name: 'Mentors', href: '/mentors', icon: Presentation },
   { name: 'Buddies', href: '/buddies', icon: GraduationCap },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
+  { name: 'Resources', href: '/resources', icon: BookOpen },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export default function Sidebar() {

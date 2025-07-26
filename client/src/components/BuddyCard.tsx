@@ -12,15 +12,15 @@ interface BuddyCardProps {
       name: string;
       domainRole: string;
       avatarUrl?: string;
-    };
+    } | null;
     status: 'active' | 'inactive' | 'exited';
     joinDate: string;
     progress: number;
     mentor?: {
       user: {
         name: string;
-      };
-    };
+      } | null;
+    } | null;
     stats?: {
       completedTasks: number;
       totalTasks: number;
@@ -54,15 +54,15 @@ export default function BuddyCard({ buddy, showMentor = true }: BuddyCardProps) 
         <CardContent className="p-6">
           <div className="flex items-center space-x-4 mb-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={buddy.user.avatarUrl} alt={buddy.user.name} />
+              <AvatarImage src={buddy.user?.avatarUrl} alt={buddy.user?.name || 'Buddy'} />
               <AvatarFallback>
-                {buddy.user.name.split(' ').map(n => n[0]).join('')}
+                {buddy.user?.name ? buddy.user.name.split(' ').map(n => n[0]).join('') : 'B'}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <h3 className="text-lg font-semibold truncate">{buddy.user.name}</h3>
+              <h3 className="text-lg font-semibold truncate">{buddy.user?.name || 'Unknown Buddy'}</h3>
               <p className="text-muted-foreground text-sm">
-                Junior {buddy.user.domainRole} Developer
+                Junior {buddy.user?.domainRole || 'Unknown'} Developer
               </p>
               <Badge className={getStatusColor(buddy.status)}>
                 {buddy.status}
@@ -79,7 +79,7 @@ export default function BuddyCard({ buddy, showMentor = true }: BuddyCardProps) 
             {showMentor && buddy.mentor && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Mentor:</span>
-                <span className="text-primary">{buddy.mentor.user.name}</span>
+                <span className="text-primary">{buddy.mentor.user?.name || 'Unknown Mentor'}</span>
               </div>
             )}
             

@@ -24,6 +24,7 @@ import {
 import { eq, and, like, desc } from 'drizzle-orm';
 import { db } from './db';
 import type { IStorage } from './storage';
+import { randomUUID } from 'crypto';
 
 export class DbStorage implements IStorage {
   constructor() {
@@ -48,6 +49,11 @@ export class DbStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0];
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const result = await db.select().from(users);
+    return result;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -135,32 +141,72 @@ export class DbStorage implements IStorage {
 
   // Mentor management
   async getMentors(filters: { role?: string; status?: string; search?: string }): Promise<any[]> {
-    const results = await db.select().from(mentors);
+    let query = db
+      .select({
+        mentor: mentors,
+        user: users
+      })
+      .from(mentors)
+      .leftJoin(users, eq(mentors.userId, users.id));
     
-    return results.map(mentor => ({
-      ...mentor,
-      user: null, // Would need to join with users table
-      stats: {
-        buddiesCount: 0,
-        completedTasks: 0
-      }
-    }));
+    // Apply filters
+    if (filters?.status && filters.status !== 'all') {
+      query = query.where(eq(mentors.isActive, filters.status === 'active'));
+    }
+    
+    if (filters?.search) {
+      query = query.where(like(users.name, `%${filters.search}%`));
+    }
+    
+    const results = await query;
+    
+    return results.map(result => {
+      // Get buddy count for this mentor
+      const buddyCount = 0; // Will be calculated in a separate query
+      
+      return {
+        ...result.mentor,
+        user: result.user,
+        stats: {
+          buddiesCount: buddyCount,
+          completedTasks: 0
+        }
+      };
+    });
   }
 
   async getMentorById(id: string): Promise<any> {
-    const result = await db.select().from(mentors).where(eq(mentors.id, id)).limit(1);
-    const mentor = result[0];
+    const result = await db
+      .select({
+        mentor: mentors,
+        user: users
+      })
+      .from(mentors)
+      .leftJoin(users, eq(mentors.userId, users.id))
+      .where(eq(mentors.id, id))
+      .limit(1);
     
-    if (!mentor) return null;
+    const mentorData = result[0];
+    
+    if (!mentorData) return null;
+    
+    // Get buddy counts
+    const buddyResults = await db
+      .select()
+      .from(buddies)
+      .where(eq(buddies.assignedMentorId, id));
+    
+    const totalBuddies = buddyResults.length;
+    const activeBuddies = buddyResults.filter(b => b.status === 'active').length;
     
     return {
-      ...mentor,
-      user: null, // Would need to join with users table
+      ...mentorData.mentor,
+      user: mentorData.user,
       stats: {
-        totalBuddies: 0,
-        activeBuddies: 0,
+        totalBuddies,
+        activeBuddies,
         completedTasks: 0,
-        responseRate: mentor.responseRate
+        responseRate: mentorData.mentor.responseRate
       }
     };
   }
@@ -170,8 +216,28 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async updateMentor(id: string, updates: Partial<Mentor>): Promise<Mentor> {
+    const result = await db.update(mentors)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(mentors.id, id))
+      .returning();
+    
+    if (result.length === 0) {
+      throw new Error('Mentor not found');
+    }
+    
+    return result[0];
+  }
+
   async getMentorBuddies(mentorId: string, status?: string): Promise<any[]> {
-    let query = db.select().from(buddies).where(eq(buddies.assignedMentorId, mentorId));
+    let query = db
+      .select({
+        buddy: buddies,
+        user: users
+      })
+      .from(buddies)
+      .leftJoin(users, eq(buddies.userId, users.id))
+      .where(eq(buddies.assignedMentorId, mentorId));
     
     if (status && status !== 'all') {
       query = query.where(eq(buddies.status, status as any));
@@ -179,10 +245,10 @@ export class DbStorage implements IStorage {
     
     const results = await query;
     
-    return results.map(buddy => ({
-      ...buddy,
-      user: null, // Would need to join with users table
-      mentor: null,
+    return results.map(result => ({
+      ...result.buddy,
+      user: result.user,
+      mentor: null, // TODO: Join with mentor data if needed
       stats: {
         completedTasks: 0,
         totalTasks: 0
@@ -192,16 +258,84 @@ export class DbStorage implements IStorage {
 
   // Buddy management
   async getBuddyById(id: string): Promise<any> {
-    const result = await db.select().from(buddies).where(eq(buddies.id, id)).limit(1);
-    const buddy = result[0];
+    // First get buddy with user data
+    const buddyResult = await db
+      .select({
+        buddy: buddies,
+        user: users
+      })
+      .from(buddies)
+      .leftJoin(users, eq(buddies.userId, users.id))
+      .where(eq(buddies.id, id))
+      .limit(1);
     
-    if (!buddy) return null;
+    const buddyData = buddyResult[0];
+    
+    if (!buddyData) return null;
+    
+    // Then get mentor data if assigned
+    let mentorData = null;
+    if (buddyData.buddy.assignedMentorId) {
+      const mentorResult = await db
+        .select({
+          mentor: mentors,
+          mentorUser: users
+        })
+        .from(mentors)
+        .leftJoin(users, eq(mentors.userId, users.id))
+        .where(eq(mentors.id, buddyData.buddy.assignedMentorId))
+        .limit(1);
+      
+      if (mentorResult[0]) {
+        mentorData = {
+          ...mentorResult[0].mentor,
+          user: mentorResult[0].mentorUser
+        };
+      }
+    }
     
     return {
-      ...buddy,
-      user: null, // Would need to join with users table
-      mentor: null
+      ...buddyData.buddy,
+      user: buddyData.user,
+      mentor: mentorData
     };
+  }
+
+  async getAllBuddies(filters?: { status?: string; domain?: string; search?: string }): Promise<any[]> {
+    let query = db
+      .select({
+        buddy: buddies,
+        user: users
+      })
+      .from(buddies)
+      .leftJoin(users, eq(buddies.userId, users.id));
+    
+    // Filter by status
+    if (filters?.status && filters.status !== 'all') {
+      query = query.where(eq(buddies.status, filters.status as any));
+    }
+    
+    // Filter by domain
+    if (filters?.domain && filters.domain !== 'all') {
+      query = query.where(eq(users.domainRole, filters.domain as any));
+    }
+    
+    // Filter by search
+    if (filters?.search) {
+      query = query.where(like(users.name, `%${filters.search}%`));
+    }
+    
+    const results = await query;
+    
+    return results.map(result => ({
+      ...result.buddy,
+      user: result.user,
+      mentor: null, // TODO: Join with mentor data if needed
+      stats: {
+        completedTasks: 0,
+        totalTasks: 0
+      }
+    }));
   }
 
   async createBuddy(buddy: InsertBuddy): Promise<Buddy> {
@@ -288,6 +422,20 @@ export class DbStorage implements IStorage {
     }));
   }
 
+  async assignBuddyToMentor(buddyId: string, mentorId: string): Promise<any> {
+    // Update buddy's assigned mentor
+    const result = await db.update(buddies)
+      .set({ assignedMentorId: mentorId })
+      .where(eq(buddies.id, buddyId))
+      .returning();
+    
+    if (result.length === 0) {
+      throw new Error('Buddy not found');
+    }
+    
+    return this.getBuddyById(buddyId);
+  }
+
   // Task management
   async createTask(task: InsertTask): Promise<Task> {
     const result = await db.insert(tasks).values(task).returning();
@@ -297,6 +445,33 @@ export class DbStorage implements IStorage {
   async getTaskById(id: string): Promise<Task | undefined> {
     const result = await db.select().from(tasks).where(eq(tasks.id, id)).limit(1);
     return result[0];
+  }
+
+  async getAllTasks(filters?: { status?: string; search?: string; buddyId?: string }): Promise<any[]> {
+    let conditions = [];
+    
+    // Filter by status
+    if (filters?.status && filters.status !== 'all') {
+      conditions.push(eq(tasks.status, filters.status as any));
+    }
+
+    // Filter by buddyId
+    if (filters?.buddyId) {
+      conditions.push(eq(tasks.buddyId, filters.buddyId));
+    }
+    
+    let query = db.select().from(tasks);
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    const results = await query;
+    
+    return results.map(task => ({
+      ...task,
+      mentor: null, // Would need to join with mentors table
+      buddy: null   // Would need to join with buddies table
+    }));
   }
 
   // Submission management
@@ -323,5 +498,79 @@ export class DbStorage implements IStorage {
   async createBuddyTopicProgress(progress: InsertBuddyTopicProgress): Promise<BuddyTopicProgress> {
     const result = await db.insert(buddyTopicProgress).values(progress).returning();
     return result[0];
+  }
+
+  // Resource management
+  async getAllResources(filters?: { category?: string; difficulty?: string; type?: string; search?: string }): Promise<any[]> {
+    // For now, return mock data since we don't have a resources table
+    // In a real implementation, this would query the resources table
+    const mockResources = [
+      {
+        id: '1',
+        title: 'React Fundamentals',
+        description: 'Complete guide to React basics and core concepts',
+        type: 'course',
+        category: 'frontend',
+        url: 'https://react.dev/learn',
+        tags: ['react', 'javascript', 'frontend'],
+        difficulty: 'beginner',
+        duration: '4 hours',
+        author: 'React Team',
+        rating: 4.8,
+        isBookmarked: false
+      },
+      {
+        id: '2',
+        title: 'TypeScript Handbook',
+        description: 'Official TypeScript documentation and tutorials',
+        type: 'documentation',
+        category: 'frontend',
+        url: 'https://www.typescriptlang.org/docs/',
+        tags: ['typescript', 'javascript', 'frontend'],
+        difficulty: 'intermediate',
+        author: 'Microsoft',
+        rating: 4.9,
+        isBookmarked: true
+      }
+    ];
+
+    let resources = mockResources;
+
+    // Apply filters
+    if (filters?.category && filters.category !== 'all') {
+      resources = resources.filter(resource => resource.category === filters.category);
+    }
+
+    if (filters?.difficulty && filters.difficulty !== 'all') {
+      resources = resources.filter(resource => resource.difficulty === filters.difficulty);
+    }
+
+    if (filters?.type && filters.type !== 'all') {
+      resources = resources.filter(resource => resource.type === filters.type);
+    }
+
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      resources = resources.filter(resource =>
+        resource.title.toLowerCase().includes(searchTerm) ||
+        resource.description.toLowerCase().includes(searchTerm) ||
+        resource.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    return resources;
+  }
+
+  async createResource(resource: any): Promise<any> {
+    // For now, return mock data since we don't have a resources table
+    // In a real implementation, this would insert into the resources table
+    const id = randomUUID();
+    const newResource = {
+      ...resource,
+      id,
+      createdAt: new Date().toISOString(),
+      isBookmarked: false
+    };
+    return newResource;
   }
 }

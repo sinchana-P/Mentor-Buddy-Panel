@@ -11,6 +11,9 @@ import BuddyCard from '@/components/BuddyCard';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { ArrowLeft, MessageCircle, Edit, Plus } from 'lucide-react';
 import { useLocation } from 'wouter';
+import AssignBuddyModal from '@/components/AssignBuddyModal';
+import EditMentorModal from '@/components/EditMentorModal';
+import MessageModal from '@/components/MessageModal';
 
 export default function MentorProfilePage() {
   const [, params] = useRoute('/mentors/:id');
@@ -18,6 +21,9 @@ export default function MentorProfilePage() {
   const mentorId = params?.id;
 
   const [statusFilter, setStatusFilter] = useState('all');
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
   const { data: mentor = null, isLoading: mentorLoading } = useQuery({
     queryKey: ['/api/mentors', mentorId],
@@ -91,11 +97,11 @@ export default function MentorProfilePage() {
               </div>
               
               <div className="flex space-x-3">
-                <Button>
+                <Button onClick={() => setIsMessageModalOpen(true)}>
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Message
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
@@ -139,7 +145,7 @@ export default function MentorProfilePage() {
                 <SelectItem value="exited">Exited</SelectItem>
               </SelectContent>
             </Select>
-            <Button>
+            <Button onClick={() => setIsAssignModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Assign Buddy
             </Button>
@@ -172,6 +178,32 @@ export default function MentorProfilePage() {
           </div>
         )}
       </motion.div>
+
+      {/* Modals */}
+      <AssignBuddyModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        mentorId={mentorId || ''}
+        mentorName={mentor?.user?.name || 'Mentor'}
+      />
+
+      <EditMentorModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        mentor={mentor}
+      />
+
+      <MessageModal
+        isOpen={isMessageModalOpen}
+        onClose={() => setIsMessageModalOpen(false)}
+        recipient={{
+          id: mentorId || '',
+          name: mentor?.user?.name || 'Mentor',
+          avatarUrl: mentor?.user?.avatarUrl,
+          role: 'mentor',
+          domainRole: mentor?.user?.domainRole || 'unknown'
+        }}
+      />
     </div>
   );
 }

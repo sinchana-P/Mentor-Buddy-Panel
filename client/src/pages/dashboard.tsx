@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import StatsCard from '@/components/StatsCard';
+import RecentActivities from '@/components/RecentActivities';
 import { useLocation } from 'wouter';
 import { Users, GraduationCap, BarChart3, Presentation, University, TrendingUp } from 'lucide-react';
 
@@ -158,43 +159,52 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivity?.map((activity: any, index: number) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className="flex items-center space-x-4 p-4 rounded-lg bg-muted/50"
-                >
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.mentorName}</span>
-                      <span className="text-muted-foreground"> {activity.action} </span>
-                      <span className="font-medium">{activity.buddyName}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground">{activity.timestamp}</p>
-                  </div>
-                  <Badge variant="secondary">{activity.type}</Badge>
-                </motion.div>
-              )) || (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No recent activity to display</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Recent Activities */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RecentActivities maxItems={5} />
+          
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>Common tasks and shortcuts</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => setLocation('/tasks')}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Create New Task
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => setLocation('/buddies')}
+              >
+                <GraduationCap className="w-4 h-4 mr-2" />
+                Assign Buddy to Mentor
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => setLocation('/resources')}
+              >
+                <University className="w-4 h-4 mr-2" />
+                Add Learning Resource
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start"
+                onClick={() => setLocation('/analytics')}
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                View Analytics Report
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </motion.div>
     </div>
   );
