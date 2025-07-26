@@ -19,12 +19,12 @@ export default function MentorProfilePage() {
 
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data: mentor, isLoading: mentorLoading } = useQuery({
+  const { data: mentor = null, isLoading: mentorLoading } = useQuery({
     queryKey: ['/api/mentors', mentorId],
     enabled: !!mentorId,
   });
 
-  const { data: assignedBuddies, isLoading: buddiesLoading } = useQuery({
+  const { data: assignedBuddies = [], isLoading: buddiesLoading } = useQuery({
     queryKey: ['/api/mentors', mentorId, 'buddies', statusFilter],
     enabled: !!mentorId,
   });

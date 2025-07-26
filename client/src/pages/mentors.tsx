@@ -16,7 +16,7 @@ export default function MentorsPage() {
     search: '',
   });
 
-  const { data: mentors, isLoading } = useQuery({
+  const { data: mentors = [], isLoading } = useQuery({
     queryKey: ['/api/mentors', filters],
   });
 

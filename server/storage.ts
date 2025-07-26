@@ -124,7 +124,11 @@ export class MemStorage implements IStorage {
 
     defaultTopics.forEach(topic => {
       const id = randomUUID();
-      this.topics.set(id, { id, ...topic });
+      this.topics.set(id, { 
+        id, 
+        ...topic,
+        domainRole: topic.domainRole as "frontend" | "backend" | "devops" | "qa" | "hr"
+      });
     });
   }
 
@@ -142,6 +146,8 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id,
+      domainRole: insertUser.domainRole || null,
+      avatarUrl: insertUser.avatarUrl || null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -301,6 +307,8 @@ export class MemStorage implements IStorage {
     const mentor: Mentor = {
       ...insertMentor,
       id,
+      responseRate: insertMentor.responseRate || null,
+      isActive: insertMentor.isActive || null,
       createdAt: new Date()
     };
     this.mentors.set(id, mentor);
@@ -357,6 +365,10 @@ export class MemStorage implements IStorage {
     const buddy: Buddy = {
       ...insertBuddy,
       id,
+      assignedMentorId: insertBuddy.assignedMentorId || null,
+      status: insertBuddy.status || null,
+      progress: insertBuddy.progress || null,
+      joinDate: insertBuddy.joinDate || new Date(),
       createdAt: new Date()
     };
     this.buddies.set(id, buddy);
@@ -457,6 +469,8 @@ export class MemStorage implements IStorage {
     const task: Task = {
       ...insertTask,
       id,
+      dueDate: insertTask.dueDate || null,
+      status: insertTask.status || null,
       createdAt: new Date()
     };
     this.tasks.set(id, task);
@@ -473,6 +487,10 @@ export class MemStorage implements IStorage {
     const submission: Submission = {
       ...insertSubmission,
       id,
+      githubLink: insertSubmission.githubLink || null,
+      deployedUrl: insertSubmission.deployedUrl || null,
+      notes: insertSubmission.notes || null,
+      feedback: insertSubmission.feedback || null,
       createdAt: new Date()
     };
     this.submissions.set(id, submission);
@@ -500,7 +518,12 @@ export class MemStorage implements IStorage {
   // Progress tracking methods
   async createBuddyTopicProgress(insertProgress: InsertBuddyTopicProgress): Promise<BuddyTopicProgress> {
     const id = randomUUID();
-    const progress: BuddyTopicProgress = { ...insertProgress, id };
+    const progress: BuddyTopicProgress = { 
+      ...insertProgress, 
+      id,
+      checked: insertProgress.checked || null,
+      completedAt: insertProgress.completedAt || null
+    };
     this.buddyTopicProgress.set(id, progress);
     return progress;
   }

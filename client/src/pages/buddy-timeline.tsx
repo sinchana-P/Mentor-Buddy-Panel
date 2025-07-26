@@ -18,22 +18,22 @@ export default function BuddyTimelinePage() {
   const [, setLocation] = useLocation();
   const buddyId = params?.id;
 
-  const { data: buddy, isLoading: buddyLoading } = useQuery({
+  const { data: buddy = null, isLoading: buddyLoading } = useQuery({
     queryKey: ['/api/buddies', buddyId],
     enabled: !!buddyId,
   });
 
-  const { data: tasks, isLoading: tasksLoading } = useQuery({
+  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
     queryKey: ['/api/buddies', buddyId, 'tasks'],
     enabled: !!buddyId,
   });
 
-  const { data: progress } = useQuery({
+  const { data: progress = { topics: [], percentage: 0 } } = useQuery({
     queryKey: ['/api/buddies', buddyId, 'progress'],
     enabled: !!buddyId,
   });
 
-  const { data: portfolio } = useQuery({
+  const { data: portfolio = [] } = useQuery({
     queryKey: ['/api/buddies', buddyId, 'portfolio'],
     enabled: !!buddyId,
   });

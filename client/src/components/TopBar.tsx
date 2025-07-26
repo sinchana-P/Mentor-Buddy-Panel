@@ -1,52 +1,41 @@
-import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Menu, Bell, Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Menu, Search, Bell } from 'lucide-react';
 
-interface TopBarProps {
-  onMobileMenuClick?: () => void;
-}
-
-export default function TopBar({ onMobileMenuClick }: TopBarProps) {
+export default function TopBar() {
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
-    <header className="bg-card border-b border-border h-16 flex items-center justify-between px-6">
-      <div className="flex items-center space-x-4">
-        {isMobile && (
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={onMobileMenuClick}
-          >
-            <Menu className="w-4 h-4" />
+    <header className="h-16 border-b border-border bg-card px-6">
+      <div className="flex items-center justify-between h-full">
+        <div className="flex items-center space-x-4">
+          {isMobile && (
+            <Button variant="ghost" size="sm">
+              <Menu className="w-4 h-4" />
+            </Button>
+          )}
+          <h2 className="text-lg font-semibold">
+            Welcome back, {user?.name || 'User'}
+          </h2>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="sm">
+            <Bell className="w-4 h-4" />
           </Button>
-        )}
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-      </div>
-
-      <div className="flex items-center space-x-4">
-        {/* Search */}
-        {!isMobile && (
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Search mentors, buddies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 pl-9"
-            />
-          </div>
-        )}
-
-        {/* Notifications */}
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="w-4 h-4" />
-          <span className="absolute -top-1 -right-1 w-3 h-3 bg-destructive rounded-full"></span>
-        </Button>
+          <Button variant="ghost" size="sm">
+            <Settings className="w-4 h-4" />
+          </Button>
+          <Avatar className="w-8 h-8">
+            <AvatarImage src={user?.avatarUrl} alt={user?.name} />
+            <AvatarFallback>
+              {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+            </AvatarFallback>
+          </Avatar>
+        </div>
       </div>
     </header>
   );
