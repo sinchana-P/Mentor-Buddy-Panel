@@ -134,7 +134,10 @@ export class MemStorage implements IStorage {
 
   // User methods
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    console.log(`[MemStorage] Looking for user ID: ${id}, total users: ${this.users.size}`);
+    const user = this.users.get(id);
+    console.log(`[MemStorage] User found:`, user ? 'YES' : 'NO');
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
@@ -151,7 +154,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    console.log(`[MemStorage] Storing user with ID: ${id}`, user);
     this.users.set(id, user);
+    console.log(`[MemStorage] Total users in storage: ${this.users.size}`);
     return user;
   }
 

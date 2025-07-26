@@ -16,22 +16,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
   app.get("/api/users/:id", async (req, res) => {
     try {
+      console.log(`[GET /api/users/${req.params.id}] Looking for user...`);
       const user = await storage.getUser(req.params.id);
       if (!user) {
+        console.log(`[GET /api/users/${req.params.id}] User not found in storage`);
         return res.status(404).json({ message: "User not found" });
       }
+      console.log(`[GET /api/users/${req.params.id}] User found:`, user);
       res.json(user);
     } catch (error) {
+      console.error(`[GET /api/users/${req.params.id}] Error:`, error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
   app.post("/api/users", async (req, res) => {
     try {
+      console.log('[POST /api/users] Creating user with data:', req.body);
       const userData = insertUserSchema.parse(req.body);
       const user = await storage.createUser(userData);
+      console.log('[POST /api/users] User created successfully:', user);
       res.status(201).json(user);
     } catch (error) {
+      console.error('[POST /api/users] Error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
       }
