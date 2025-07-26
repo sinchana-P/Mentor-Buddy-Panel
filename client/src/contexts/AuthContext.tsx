@@ -21,14 +21,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check for cached user profile first (for development)
+    const cachedProfile = localStorage.getItem('user_profile');
+    if (cachedProfile) {
+      try {
+        const profileData = JSON.parse(cachedProfile);
+        console.log('Loading cached user profile:', profileData);
+        setUser(profileData);
+        setLoading(false);
+        return;
+      } catch (error) {
+        console.error('Error parsing cached profile:', error);
+        localStorage.removeItem('user_profile');
+      }
+    }
+
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       if (session?.user) {
         await fetchUserProfile(session.user.id);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     getSession();

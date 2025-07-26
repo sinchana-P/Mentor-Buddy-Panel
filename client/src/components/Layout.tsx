@@ -37,6 +37,10 @@ export default function Layout({ children }: LayoutProps) {
 
   const handleSignOut = async () => {
     await signOut();
+    // Clear cached data and redirect
+    localStorage.removeItem('user_profile');
+    localStorage.removeItem('supabase_user_mapping');
+    window.location.href = '/';
   };
 
   const isActive = (href: string) => {
