@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, boolean, uuid } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, boolean, uuid, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -71,6 +71,21 @@ export const buddyTopicProgress = pgTable("buddy_topic_progress", {
   completedAt: timestamp("completed_at"),
 });
 
+export const resources = pgTable('resources', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: varchar('title', { length: 255 }).notNull(),
+  url: text('url').notNull(),
+  description: text('description'),
+  type: varchar('type', { length: 64 }),
+  category: varchar('category', { length: 64 }),
+  difficulty: varchar('difficulty', { length: 32 }),
+  duration: varchar('duration', { length: 32 }),
+  author: varchar('author', { length: 128 }),
+  tags: jsonb('tags').$type<string[]>(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -106,6 +121,12 @@ export const insertBuddyTopicProgressSchema = createInsertSchema(buddyTopicProgr
   id: true,
 });
 
+export const insertResourceSchema = createInsertSchema(resources).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -121,3 +142,5 @@ export type Topic = typeof topics.$inferSelect;
 export type InsertTopic = z.infer<typeof insertTopicSchema>;
 export type BuddyTopicProgress = typeof buddyTopicProgress.$inferSelect;
 export type InsertBuddyTopicProgress = z.infer<typeof insertBuddyTopicProgressSchema>;
+export type Resource = typeof resources.$inferSelect;
+export type InsertResource = z.infer<typeof insertResourceSchema>;

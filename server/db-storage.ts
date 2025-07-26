@@ -19,7 +19,8 @@ import {
   tasks,
   submissions,
   topics,
-  buddyTopicProgress
+  buddyTopicProgress,
+  resources
 } from "@shared/schema";
 import { eq, and, like, desc } from 'drizzle-orm';
 import { db } from './db';
@@ -58,6 +59,13 @@ export class DbStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     console.log(`[DbStorage] Creating user:`, insertUser);
+    // Duplicate email check
+    const existing = await this.getUserByEmail(insertUser.email);
+    if (existing) {
+      const err: any = new Error('Email already exists');
+      err.code = 'DUPLICATE_EMAIL';
+      throw err;
+    }
     const result = await db.insert(users).values(insertUser).returning();
     const user = result[0];
     console.log(`[DbStorage] User created successfully:`, user);
@@ -167,10 +175,10 @@ export class DbStorage implements IStorage {
       return {
         ...result.mentor,
         user: result.user,
-        stats: {
+      stats: {
           buddiesCount: buddyCount,
-          completedTasks: 0
-        }
+        completedTasks: 0
+      }
       };
     });
   }
@@ -502,75 +510,31 @@ export class DbStorage implements IStorage {
 
   // Resource management
   async getAllResources(filters?: { category?: string; difficulty?: string; type?: string; search?: string }): Promise<any[]> {
-    // For now, return mock data since we don't have a resources table
-    // In a real implementation, this would query the resources table
-    const mockResources = [
-      {
-        id: '1',
-        title: 'React Fundamentals',
-        description: 'Complete guide to React basics and core concepts',
-        type: 'course',
-        category: 'frontend',
-        url: 'https://react.dev/learn',
-        tags: ['react', 'javascript', 'frontend'],
-        difficulty: 'beginner',
-        duration: '4 hours',
-        author: 'React Team',
-        rating: 4.8,
-        isBookmarked: false
-      },
-      {
-        id: '2',
-        title: 'TypeScript Handbook',
-        description: 'Official TypeScript documentation and tutorials',
-        type: 'documentation',
-        category: 'frontend',
-        url: 'https://www.typescriptlang.org/docs/',
-        tags: ['typescript', 'javascript', 'frontend'],
-        difficulty: 'intermediate',
-        author: 'Microsoft',
-        rating: 4.9,
-        isBookmarked: true
-      }
-    ];
-
-    let resources = mockResources;
-
+    let query = db.select().from(resources);
     // Apply filters
     if (filters?.category && filters.category !== 'all') {
-      resources = resources.filter(resource => resource.category === filters.category);
+      query = query.where(eq(resources.category, filters.category));
     }
-
     if (filters?.difficulty && filters.difficulty !== 'all') {
-      resources = resources.filter(resource => resource.difficulty === filters.difficulty);
+      query = query.where(eq(resources.difficulty, filters.difficulty));
     }
-
     if (filters?.type && filters.type !== 'all') {
-      resources = resources.filter(resource => resource.type === filters.type);
+      query = query.where(eq(resources.type, filters.type));
     }
-
-    if (filters?.search) {
-      const searchTerm = filters.search.toLowerCase();
-      resources = resources.filter(resource =>
-        resource.title.toLowerCase().includes(searchTerm) ||
-        resource.description.toLowerCase().includes(searchTerm) ||
-        resource.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm))
-      );
-    }
-
-    return resources;
+    // TODO: Add search filter if needed
+    const result = await query;
+    return result;
   }
 
   async createResource(resource: any): Promise<any> {
-    // For now, return mock data since we don't have a resources table
-    // In a real implementation, this would insert into the resources table
-    const id = randomUUID();
-    const newResource = {
+    const now = new Date();
+    const insertData = {
       ...resource,
-      id,
-      createdAt: new Date().toISOString(),
-      isBookmarked: false
+      tags: Array.isArray(resource.tags) ? resource.tags : (typeof resource.tags === 'string' ? resource.tags.split(',').map((t: string) => t.trim()) : []),
+      createdAt: now,
+      updatedAt: now,
     };
-    return newResource;
+    const result = await db.insert(resources).values(insertData).returning();
+    return result[0];
   }
 }

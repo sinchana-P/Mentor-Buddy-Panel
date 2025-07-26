@@ -744,7 +744,7 @@ async function initializeStorage(): Promise<IStorage> {
     
     // Add some initial data to database if tables are empty
     try {
-      await seedDatabaseData(dbStorage);
+    await seedDatabaseData(dbStorage);
     } catch (seedError) {
       console.log('[Storage] Database already seeded or seeding failed, continuing...');
     }
@@ -820,12 +820,12 @@ async function initializeStorage(): Promise<IStorage> {
 // Run database migrations
 async function runMigrations() {
   try {
-    const { migrate } = await import('drizzle-orm/node-postgres/migrator');
-    const { db } = await import('./db');
-    
-    console.log('[Storage] Running database migrations...');
-    await migrate(db, { migrationsFolder: './migrations' });
-    console.log('[Storage] Migrations completed successfully');
+  const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+  const { db } = await import('./db');
+  
+  console.log('[Storage] Running database migrations...');
+  await migrate(db, { migrationsFolder: './migrations' });
+  console.log('[Storage] Migrations completed successfully');
   } catch (error) {
     console.log('[Storage] Migrations already applied or not needed');
   }

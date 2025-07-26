@@ -49,10 +49,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser(userData);
       console.log('[POST /api/users] User created successfully:', user);
       res.status(201).json(user);
-    } catch (error) {
+    } catch (error: any) {
       console.error('[POST /api/users] Error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+      }
+      if (error.code === 'DUPLICATE_EMAIL') {
+        return res.status(409).json({ message: 'Email already exists' });
       }
       res.status(500).json({ message: "Internal server error" });
     }
@@ -154,8 +157,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalTasks: 0
         }
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating buddy:', error);
+      if (error.code === 'DUPLICATE_EMAIL') {
+        return res.status(409).json({ message: 'Email already exists' });
+      }
       res.status(500).json({ message: 'Failed to create buddy' });
     }
   });
