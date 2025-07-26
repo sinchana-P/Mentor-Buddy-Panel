@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Search, UserPlus, Filter } from 'lucide-react';
+import { Link } from 'wouter';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 
 type Buddy = {
@@ -28,14 +36,61 @@ type Buddy = {
   };
 };
 
+const buddyFormSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email'),
+  domainRole: z.enum(['frontend', 'backend', 'devops', 'qa', 'hr'])
+});
+
 export default function BuddiesPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [domainFilter, setDomainFilter] = useState<string>('all');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const buddyForm = useForm<z.infer<typeof buddyFormSchema>>({
+    resolver: zodResolver(buddyFormSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      domainRole: 'frontend'
+    }
+  });
 
   const { data: buddies = [], isLoading } = useQuery<Buddy[]>({
     queryKey: ['/api/buddies', { status: statusFilter, domain: domainFilter, search }],
   });
+
+  const createBuddyMutation = useMutation({
+    mutationFn: (data: z.infer<typeof buddyFormSchema>) =>
+      apiRequest('/api/buddies', {
+        method: 'POST',
+        body: data,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/buddies'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+      setIsCreateDialogOpen(false);
+      buddyForm.reset();
+      toast({
+        title: 'Success',
+        description: 'Buddy created successfully!'
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to create buddy. Please try again.',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const onCreateBuddy = (data: z.infer<typeof buddyFormSchema>) => {
+    createBuddyMutation.mutate(data);
+  };
 
   const filteredBuddies = buddies.filter(buddy => {
     const matchesSearch = buddy.user.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -68,7 +123,7 @@ export default function BuddiesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-background">
         <div className="p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/4"></div>
@@ -84,11 +139,11 @@ export default function BuddiesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-background">
       <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Buddies</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage and track buddy progress</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Buddies</h1>
+          <p className="text-muted-foreground">Manage and track buddy progress</p>
         </div>
 
         {/* Filters and Search */}
@@ -131,18 +186,96 @@ export default function BuddiesPage() {
               </SelectContent>
             </Select>
 
-            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-              <UserPlus className="h-4 w-4 mr-2" />
-              Add Buddy
-            </Button>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Buddy
+                </Button>
+              </DialogTrigger>
+              
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Add New Buddy</DialogTitle>
+                  <DialogDescription>Create a new buddy profile for mentorship tracking.</DialogDescription>
+                </DialogHeader>
+                
+                <Form {...buddyForm}>
+                  <form onSubmit={buddyForm.handleSubmit(onCreateBuddy)} className="space-y-4">
+                    <FormField
+                      control={buddyForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter buddy's full name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={buddyForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="buddy@example.com" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={buddyForm.control}
+                      name="domainRole"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Domain</FormLabel>
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select domain expertise" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="frontend">Frontend</SelectItem>
+                              <SelectItem value="backend">Backend</SelectItem>
+                              <SelectItem value="devops">DevOps</SelectItem>
+                              <SelectItem value="qa">QA</SelectItem>
+                              <SelectItem value="hr">HR</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={createBuddyMutation.isPending}>
+                        {createBuddyMutation.isPending ? 'Creating...' : 'Create Buddy'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
         {/* Buddies Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredBuddies.map((buddy) => (
-            <Card key={buddy.id} className="hover:shadow-lg transition-shadow duration-200 cursor-pointer">
-              <CardHeader className="pb-3">
+            <Link href={`/buddies/${buddy.id}`} key={buddy.id}>
+              <Card className="hover:shadow-lg transition-shadow duration-200 cursor-pointer">
+                <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
@@ -205,6 +338,7 @@ export default function BuddiesPage() {
                 </div>
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
 

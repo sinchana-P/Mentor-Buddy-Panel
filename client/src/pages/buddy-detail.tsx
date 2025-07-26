@@ -53,7 +53,7 @@ export default function BuddyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-background">
         <div className="p-6">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/3"></div>
@@ -66,7 +66,7 @@ export default function BuddyDetailPage() {
 
   if (!buddy) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-background">
         <div className="p-6 text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Buddy not found</h1>
           <Link href="/buddies">
@@ -82,7 +82,7 @@ export default function BuddyDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-background">
       <div className="p-6">
         <div className="mb-6">
           <Link href="/buddies">

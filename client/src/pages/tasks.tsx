@@ -97,7 +97,7 @@ export default function TasksPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="min-h-screen bg-background">
         <div className="p-6">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/4"></div>
@@ -113,11 +113,11 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen bg-background">
       <div className="p-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Tasks</h1>
-          <p className="text-gray-600 dark:text-gray-400">Create and manage tasks for your buddies</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Tasks</h1>
+          <p className="text-muted-foreground">Create and manage tasks for your buddies</p>
         </div>
 
         {/* Filters and Actions */}

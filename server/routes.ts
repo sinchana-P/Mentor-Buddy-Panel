@@ -100,14 +100,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/buddies", async (req, res) => {
     try {
-      const buddyData = insertBuddySchema.parse(req.body);
-      const buddy = await storage.createBuddy(buddyData);
-      res.status(201).json(buddy);
+      console.log('[POST /api/buddies] Creating new buddy:', req.body);
+      const { name, email, domainRole } = req.body;
+      
+      // Create user first
+      const user = await storage.createUser({
+        email,
+        name,
+        role: 'buddy',
+        domainRole,
+        createdAt: new Date()
+      });
+      
+      console.log('[POST /api/buddies] User created:', user.id);
+      
+      // Create buddy profile
+      const buddy = await storage.createBuddy({
+        userId: user.id,
+        domainRole,
+        status: 'active',
+        startDate: new Date()
+      });
+      
+      console.log('[POST /api/buddies] Buddy created:', buddy.id);
+      
+      res.json({ 
+        id: buddy.id,
+        user: {
+          name: user.name,
+          email: user.email,
+          avatarUrl: user.avatarUrl
+        },
+        mentor: null,
+        domainRole: buddy.domainRole,
+        status: buddy.status,
+        startDate: buddy.startDate.toISOString(),
+        stats: {
+          completedTasks: 0,
+          totalTasks: 0
+        }
+      });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid buddy data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
+      console.error('Error creating buddy:', error);
+      res.status(500).json({ message: 'Failed to create buddy' });
     }
   });
 
@@ -169,14 +204,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/tasks", async (req, res) => {
     try {
-      const taskData = insertTaskSchema.parse(req.body);
-      const task = await storage.createTask(taskData);
-      res.status(201).json(task);
+      console.log('[POST /api/tasks] Creating new task:', req.body);
+      const { title, description, buddyId, dueDate } = req.body;
+      
+      const task = await storage.createTask({
+        title,
+        description,
+        buddyId,
+        status: 'pending',
+        dueDate: dueDate ? new Date(dueDate) : null,
+        createdAt: new Date()
+      });
+      
+      console.log('[POST /api/tasks] Task created:', task.id);
+      
+      res.json(task);
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid task data", errors: error.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
+      console.error('Error creating task:', error);
+      res.status(500).json({ message: 'Failed to create task' });
     }
   });
 
