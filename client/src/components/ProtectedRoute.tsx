@@ -1,0 +1,26 @@
+import { ReactNode } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import AuthPage from '@/pages/auth';
+import LoadingSpinner from '@/components/ui/loading-spinner';
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+}
+
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-bg">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  return <>{children}</>;
+}
