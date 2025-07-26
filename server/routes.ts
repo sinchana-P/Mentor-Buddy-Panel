@@ -108,8 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         name,
         role: 'buddy',
-        domainRole,
-        createdAt: new Date()
+        domainRole
       });
       
       console.log('[POST /api/buddies] User created:', user.id);
@@ -117,9 +116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create buddy profile
       const buddy = await storage.createBuddy({
         userId: user.id,
-        domainRole,
-        status: 'active',
-        startDate: new Date()
+        status: 'active'
       });
       
       console.log('[POST /api/buddies] Buddy created:', buddy.id);
@@ -132,9 +129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           avatarUrl: user.avatarUrl
         },
         mentor: null,
-        domainRole: buddy.domainRole,
+        domainRole: user.domainRole,
         status: buddy.status,
-        startDate: buddy.startDate.toISOString(),
+        startDate: buddy.joinDate.toISOString(),
         stats: {
           completedTasks: 0,
           totalTasks: 0
@@ -208,12 +205,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { title, description, buddyId, dueDate } = req.body;
       
       const task = await storage.createTask({
+        mentorId: "mentor-1", // This would be dynamic based on authenticated user
+        buddyId,
         title,
         description,
-        buddyId,
         status: 'pending',
-        dueDate: dueDate ? new Date(dueDate) : null,
-        createdAt: new Date()
+        dueDate: dueDate ? new Date(dueDate) : null
       });
       
       console.log('[POST /api/tasks] Task created:', task.id);

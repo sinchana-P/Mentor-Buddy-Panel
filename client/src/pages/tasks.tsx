@@ -49,15 +49,14 @@ export default function TasksPage() {
   });
 
   const createTaskMutation = useMutation({
-    mutationFn: (data: TaskFormData) =>
-      apiRequest('/api/tasks', {
-        method: 'POST',
-        body: {
-          ...data,
-          dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
-          mentorId: 'mentor-1', // This would be dynamic based on current user
-        },
-      }),
+    mutationFn: async (data: TaskFormData) => {
+      const response = await apiRequest('POST', '/api/tasks', {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+        mentorId: 'mentor-1', // This would be dynamic based on current user
+      });
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       setIsCreateDialogOpen(false);
@@ -65,13 +64,13 @@ export default function TasksPage() {
     },
   });
 
-  const filteredTasks = tasks.filter((task: any) => {
+  const filteredTasks = Array.isArray(tasks) ? tasks.filter((task: any) => {
     const matchesSearch = task.title.toLowerCase().includes(search.toLowerCase()) ||
                          task.description.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
     
     return matchesSearch && matchesStatus;
-  });
+  }) : [];
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -201,7 +200,7 @@ export default function TasksPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              {buddies.map((buddy: any) => (
+                              {Array.isArray(buddies) && buddies.map((buddy: any) => (
                                 <SelectItem key={buddy.id} value={buddy.id}>
                                   {buddy.user?.name} ({buddy.domainRole})
                                 </SelectItem>

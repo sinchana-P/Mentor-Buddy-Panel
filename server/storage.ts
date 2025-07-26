@@ -145,7 +145,7 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = insertUser.id || randomUUID();
+    const id = randomUUID();
     const user: User = { 
       ...insertUser, 
       id,
@@ -558,31 +558,24 @@ async function initializeStorage(): Promise<IStorage> {
     const memStorage = new MemStorage();
     
     const testUser = await memStorage.createUser({
-      id: '1a11c298-2293-4654-ab53-bdc648218570',
       email: 'test@example.com',
       name: 'Test User',
       role: 'mentor',
-      domainRole: 'frontend',
-      createdAt: new Date()
+      domainRole: 'frontend'
     });
     
     await memStorage.createMentor({
-      id: 'mentor-1',
       userId: testUser.id,
-      bio: 'Experienced frontend developer',
-      expertise: ['React', 'TypeScript', 'JavaScript'],
+      expertise: 'Experienced frontend developer with React, TypeScript, JavaScript',
+      experience: '5+ years in frontend development',
       responseRate: 95,
       isActive: true
     });
 
     // Create some buddies with sample data
     const buddy1 = await memStorage.createBuddy({
-      id: 'buddy-1',
       userId: testUser.id, // Same user for demo
-      assignedMentorId: 'mentor-1',
-      domainRole: 'frontend',
-      status: 'active',
-      startDate: new Date('2024-01-15')
+      status: 'active'
     });
 
     // Create some sample topics
@@ -596,28 +589,27 @@ async function initializeStorage(): Promise<IStorage> {
 
     for (const topic of topics) {
       await memStorage.createTopic({
-        id: `topic-${topic.name.toLowerCase().replace(/\s+/g, '-')}`,
-        ...topic
+        name: topic.name,
+        category: topic.category,
+        domainRole: topic.domainRole as "frontend" | "backend" | "devops" | "qa" | "hr"
       });
     }
 
     // Create some sample tasks
     await memStorage.createTask({
-      id: 'task-1',
       title: 'Build a Todo App',
       description: 'Create a simple todo application using React with add, edit, and delete functionality.',
-      mentorId: 'mentor-1',
-      buddyId: 'buddy-1',
+      mentorId: testUser.id, // Use the mentor ID
+      buddyId: buddy1.id,
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       status: 'pending'
     });
 
     await memStorage.createTask({
-      id: 'task-2', 
       title: 'Learn CSS Flexbox',
       description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
-      mentorId: 'mentor-1',
-      buddyId: 'buddy-1',
+      mentorId: testUser.id, // Use the mentor ID
+      buddyId: buddy1.id,
       dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       status: 'in_progress'
     });
@@ -650,32 +642,25 @@ async function seedDatabaseData(dbStorage: DbStorage) {
     
     // Create test user
     const testUser = await dbStorage.createUser({
-      id: '1a11c298-2293-4654-ab53-bdc648218570',
       email: 'test@example.com',
       name: 'Test User',
       role: 'mentor',
-      domainRole: 'frontend',
-      createdAt: new Date()
+      domainRole: 'frontend'
     });
 
     // Create mentor profile
     await dbStorage.createMentor({
-      id: 'mentor-1',
       userId: testUser.id,
-      bio: 'Experienced frontend developer',
-      expertise: ['React', 'TypeScript', 'JavaScript'],
+      expertise: 'Experienced frontend developer with React, TypeScript, JavaScript',
+      experience: '5+ years in frontend development',
       responseRate: 95,
       isActive: true
     });
 
     // Create buddy
     await dbStorage.createBuddy({
-      id: 'buddy-1',
       userId: testUser.id,
-      assignedMentorId: 'mentor-1',
-      domainRole: 'frontend',
-      status: 'active',
-      startDate: new Date('2024-01-15')
+      status: 'active'
     });
 
     // Create topics
@@ -689,28 +674,27 @@ async function seedDatabaseData(dbStorage: DbStorage) {
 
     for (const topic of topics) {
       await dbStorage.createTopic({
-        id: `topic-${topic.name.toLowerCase().replace(/\s+/g, '-')}`,
-        ...topic
+        name: topic.name,
+        category: topic.category,
+        domainRole: topic.domainRole as "frontend" | "backend" | "devops" | "qa" | "hr"
       });
     }
 
     // Create tasks
     await dbStorage.createTask({
-      id: 'task-1',
       title: 'Build a Todo App',
       description: 'Create a simple todo application using React with add, edit, and delete functionality.',
-      mentorId: 'mentor-1',
-      buddyId: 'buddy-1',
+      mentorId: testUser.id,
+      buddyId: testUser.id, // Will need actual buddy ID
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: 'pending'
     });
 
     await dbStorage.createTask({
-      id: 'task-2',
       title: 'Learn CSS Flexbox',
       description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
-      mentorId: 'mentor-1',
-      buddyId: 'buddy-1',
+      mentorId: testUser.id,
+      buddyId: testUser.id, // Will need actual buddy ID
       dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       status: 'in_progress'
     });

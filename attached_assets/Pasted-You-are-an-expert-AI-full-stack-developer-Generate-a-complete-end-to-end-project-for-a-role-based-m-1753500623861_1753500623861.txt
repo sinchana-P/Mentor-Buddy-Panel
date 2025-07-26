@@ -1,0 +1,74 @@
+You are an expert AI full-stack developer. Generate a complete end-to-end project for a role-based mentoring platform called **"Mentor-Buddy Panel"** using the following stack:
+
+- **Frontend**: React + TypeScript
+- **UI Framework**: Ant Design (with dark theme support)
+- **Backend/DB/Auth**: Supabase
+- **State Management**: React Context (MVP)
+- **Routing**: React Router v6
+- **Deployment-ready** structure (Vite + Tailwind optional for layout)
+- **Animations**: Use `framer-motion` or smooth CSS transitions
+- **Responsiveness**: Fully responsive for both **laptops** and **mobile screens**
+
+---
+
+## 🎯 MVP Scope — Implement Features from Phase 1 & 2:
+
+### 1. AUTHENTICATION
+- Login/Signup with Supabase Auth (email/password or magic link)
+- After login, display a **Role Selection screen** (FE, BE, DevOps, QA, HR)
+- Save selected role in user's profile table in Supabase
+
+### 2. DASHBOARD (Post-login landing)
+- Based on role (Mentor, Buddy, Manager/CEO), render corresponding dashboard
+- Role cards with avatars and role titles
+- On click of role card:
+  - Show filter dropdowns: select Mentors or Buddies (searchable)
+  - Show Mentor & Buddy cards grid
+
+### 3. MENTOR & BUDDY CARDS
+- Mentor Card: photo, name, role, number of buddies trained
+- Buddy Card: photo, name, role
+- Clicking on Mentor Card → goes to **Mentor Profile Page**
+- Clicking on Buddy Card → goes to **Buddy Timeline Page**
+
+---
+
+## 👤 MENTOR PROFILE PAGE
+- List of all assigned Buddy Cards under the mentor
+- Filter by status (Active, Inactive, Exited)
+
+---
+
+## 👨‍💻 BUDDY PROFILE PAGE
+- **Header**: name, role, join date, assigned mentor
+- **Timeline Section**:
+  - Mentor posts a task per day (title, description)
+  - Buddy submits: GitHub PR link, hosted URL, text, or attachment
+  - Comments/chat-style layout for feedback
+- **Checklist**: List of technical topics (checkboxes). Mentor ticks based on progress
+- **Work Portfolio Section**: List all tasks submitted with links/files
+
+---
+
+## 🛠️ DB Schema (Supabase)
+Generate tables for:
+- `users` (id, name, email, role [manager/mentor/buddy], domainRole)
+- `mentors` (id, user_id, expertise, avatar, ...)
+- `buddies` (id, user_id, assigned_mentor_id, status, ...)
+- `tasks` (id, mentor_id, buddy_id, date, title, description, attachments)
+- `submissions` (id, buddy_id, task_id, github_link, deployed_url, text, feedback)
+- `topics` (id, name, category)
+- `buddy_topic_progress` (buddy_id, topic_id, checked: boolean)
+
+---
+
+## ✨ UI/UX
+- Use **Ant Design dark theme**
+- Framer Motion for transitions and page loads
+- Grid layout for card sections
+- Sticky headers, responsive dropdowns, mobile menu drawer
+
+---
+
+## ✅ Project Structure
+Use clean, modular file structure:

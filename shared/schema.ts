@@ -73,10 +73,9 @@ export const buddyTopicProgress = pgTable("buddy_topic_progress", {
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
   createdAt: true,
   updatedAt: true,
-}).extend({
-  id: z.string().uuid().optional(),
 });
 
 export const insertMentorSchema = createInsertSchema(mentors).omit({
