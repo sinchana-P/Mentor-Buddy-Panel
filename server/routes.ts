@@ -75,6 +75,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Buddies routes
+  app.get("/api/buddies", async (req, res) => {
+    try {
+      const { status, domain, search } = req.query;
+      const buddies = await storage.getMentorBuddies("mentor-1", status as string); // This would be dynamic
+      res.json(buddies);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/buddies/:id", async (req, res) => {
+    try {
+      const buddy = await storage.getBuddyById(req.params.id);
+      if (!buddy) {
+        return res.status(404).json({ message: "Buddy not found" });
+      }
+      res.json(buddy);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/buddies", async (req, res) => {
+    try {
+      const buddyData = insertBuddySchema.parse(req.body);
+      const buddy = await storage.createBuddy(buddyData);
+      res.status(201).json(buddy);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid buddy data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/buddies/:id/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getBuddyTasks(req.params.id);
+      res.json(tasks);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/buddies/:id/progress", async (req, res) => {
+    try {
+      const progress = await storage.getBuddyProgress(req.params.id);
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/buddies/:id/progress/:topicId", async (req, res) => {
+    try {
+      const { checked } = req.body;
+      const progress = await storage.updateBuddyTopicProgress(req.params.id, req.params.topicId, checked);
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/buddies/:id/portfolio", async (req, res) => {
+    try {
+      const portfolio = await storage.getBuddyPortfolio(req.params.id);
+      res.json(portfolio);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Tasks routes
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      const { status, search } = req.query;
+      // Get tasks for the current mentor (would be dynamic based on authenticated user)
+      const buddies = await storage.getMentorBuddies("mentor-1");
+      const allTasks = [];
+      
+      for (const buddy of buddies) {
+        const tasks = await storage.getBuddyTasks(buddy.id);
+        allTasks.push(...tasks);
+      }
+      
+      res.json(allTasks);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/tasks", async (req, res) => {
+    try {
+      const taskData = insertTaskSchema.parse(req.body);
+      const task = await storage.createTask(taskData);
+      res.status(201).json(task);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid task data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/tasks/:id", async (req, res) => {
+    try {
+      const task = await storage.getTaskById(req.params.id);
+      if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Submissions routes
+  app.post("/api/submissions", async (req, res) => {
+    try {
+      const submissionData = insertSubmissionSchema.parse(req.body);
+      const submission = await storage.createSubmission(submissionData);
+      res.status(201).json(submission);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid submission data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Topics routes
+  app.get("/api/topics", async (req, res) => {
+    try {
+      const { domain } = req.query;
+      const topics = await storage.getTopics(domain as string);
+      res.json(topics);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/topics", async (req, res) => {
+    try {
+      const topicData = insertTopicSchema.parse(req.body);
+      const topic = await storage.createTopic(topicData);
+      res.status(201).json(topic);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid topic data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Mentor routes
   app.get("/api/mentors", async (req, res) => {
     try {

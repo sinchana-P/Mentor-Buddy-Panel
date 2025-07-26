@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Menu, Bell, Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export default function TopBar() {
+export function TopBar() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
 
@@ -40,3 +40,5 @@ export default function TopBar() {
     </header>
   );
 }
+
+export default TopBar;

@@ -27,19 +27,8 @@ import type { IStorage } from './storage';
 
 export class DbStorage implements IStorage {
   constructor() {
-    // Test database connection on initialization
-    this.testConnection();
-  }
-
-  private async testConnection() {
-    try {
-      console.log('[DbStorage] Testing database connection...');
-      await db.select().from(users).limit(1);
-      console.log('[DbStorage] Database connection successful');
-    } catch (error) {
-      console.error('[DbStorage] Database connection failed:', error);
-      throw new Error('Database connection failed');
-    }
+    // Remove async test from constructor - will be handled during initialization
+    console.log('[DbStorage] Database storage instance created');
   }
 
   // User management

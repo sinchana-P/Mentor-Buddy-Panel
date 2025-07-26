@@ -536,33 +536,190 @@ export class MemStorage implements IStorage {
 
 import { DbStorage } from './db-storage';
 
-// Initialize storage with fallback mechanism
+// Initialize storage with database connection
 async function initializeStorage(): Promise<IStorage> {
-  // For now, use memory storage until database connection is properly configured
-  console.log('[Storage] Using memory storage (database connection pending)');
-  const memStorage = new MemStorage();
+  try {
+    console.log('[Storage] Attempting to use database storage...');
+    const dbStorage = new DbStorage();
+    
+    // Test the connection by running the migration
+    await runMigrations();
+    
+    console.log('[Storage] Database storage initialized successfully');
+    
+    // Add some initial data to database if tables are empty
+    await seedDatabaseData(dbStorage);
+    
+    return dbStorage;
+  } catch (error) {
+    console.error('[Storage] Database connection failed, using memory storage:', error);
+    
+    // Fallback to memory storage with test data
+    const memStorage = new MemStorage();
+    
+    const testUser = await memStorage.createUser({
+      id: '1a11c298-2293-4654-ab53-bdc648218570',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'mentor',
+      domainRole: 'frontend',
+      createdAt: new Date()
+    });
+    
+    await memStorage.createMentor({
+      id: 'mentor-1',
+      userId: testUser.id,
+      bio: 'Experienced frontend developer',
+      expertise: ['React', 'TypeScript', 'JavaScript'],
+      responseRate: 95,
+      isActive: true
+    });
+
+    // Create some buddies with sample data
+    const buddy1 = await memStorage.createBuddy({
+      id: 'buddy-1',
+      userId: testUser.id, // Same user for demo
+      assignedMentorId: 'mentor-1',
+      domainRole: 'frontend',
+      status: 'active',
+      startDate: new Date('2024-01-15')
+    });
+
+    // Create some sample topics
+    const topics = [
+      { name: 'HTML Fundamentals', category: 'basics', domainRole: 'frontend' },
+      { name: 'CSS Styling', category: 'basics', domainRole: 'frontend' },
+      { name: 'JavaScript ES6+', category: 'intermediate', domainRole: 'frontend' },
+      { name: 'React Components', category: 'advanced', domainRole: 'frontend' },
+      { name: 'State Management', category: 'advanced', domainRole: 'frontend' }
+    ];
+
+    for (const topic of topics) {
+      await memStorage.createTopic({
+        id: `topic-${topic.name.toLowerCase().replace(/\s+/g, '-')}`,
+        ...topic
+      });
+    }
+
+    // Create some sample tasks
+    await memStorage.createTask({
+      id: 'task-1',
+      title: 'Build a Todo App',
+      description: 'Create a simple todo application using React with add, edit, and delete functionality.',
+      mentorId: 'mentor-1',
+      buddyId: 'buddy-1',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+      status: 'pending'
+    });
+
+    await memStorage.createTask({
+      id: 'task-2', 
+      title: 'Learn CSS Flexbox',
+      description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
+      mentorId: 'mentor-1',
+      buddyId: 'buddy-1',
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+      status: 'in_progress'
+    });
+    
+    return memStorage;
+  }
+}
+
+// Run database migrations
+async function runMigrations() {
+  const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+  const { db } = await import('./db');
   
-  // Initialize with some test data for demonstration
-  const testUser = await memStorage.createUser({
-    id: '1a11c298-2293-4654-ab53-bdc648218570',
-    email: 'test@example.com',
-    name: 'Test User',
-    role: 'mentor',
-    domainRole: 'frontend',
-    createdAt: new Date()
-  });
-  
-  await memStorage.createMentor({
-    id: 'mentor-1',
-    userId: testUser.id,
-    bio: 'Experienced frontend developer',
-    expertise: ['React', 'TypeScript', 'JavaScript'],
-    responseRate: 95,
-    isActive: true
-  });
-  
-  console.log('[Storage] Initialized with test data');
-  return memStorage;
+  console.log('[Storage] Running database migrations...');
+  await migrate(db, { migrationsFolder: './migrations' });
+  console.log('[Storage] Migrations completed successfully');
+}
+
+// Seed database with initial data
+async function seedDatabaseData(dbStorage: DbStorage) {
+  try {
+    // Check if user already exists
+    const existingUser = await dbStorage.getUser('1a11c298-2293-4654-ab53-bdc648218570');
+    if (existingUser) {
+      console.log('[Storage] Database already seeded');
+      return;
+    }
+
+    console.log('[Storage] Seeding database with initial data...');
+    
+    // Create test user
+    const testUser = await dbStorage.createUser({
+      id: '1a11c298-2293-4654-ab53-bdc648218570',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: 'mentor',
+      domainRole: 'frontend',
+      createdAt: new Date()
+    });
+
+    // Create mentor profile
+    await dbStorage.createMentor({
+      id: 'mentor-1',
+      userId: testUser.id,
+      bio: 'Experienced frontend developer',
+      expertise: ['React', 'TypeScript', 'JavaScript'],
+      responseRate: 95,
+      isActive: true
+    });
+
+    // Create buddy
+    await dbStorage.createBuddy({
+      id: 'buddy-1',
+      userId: testUser.id,
+      assignedMentorId: 'mentor-1',
+      domainRole: 'frontend',
+      status: 'active',
+      startDate: new Date('2024-01-15')
+    });
+
+    // Create topics
+    const topics = [
+      { name: 'HTML Fundamentals', category: 'basics', domainRole: 'frontend' },
+      { name: 'CSS Styling', category: 'basics', domainRole: 'frontend' },
+      { name: 'JavaScript ES6+', category: 'intermediate', domainRole: 'frontend' },
+      { name: 'React Components', category: 'advanced', domainRole: 'frontend' },
+      { name: 'State Management', category: 'advanced', domainRole: 'frontend' }
+    ];
+
+    for (const topic of topics) {
+      await dbStorage.createTopic({
+        id: `topic-${topic.name.toLowerCase().replace(/\s+/g, '-')}`,
+        ...topic
+      });
+    }
+
+    // Create tasks
+    await dbStorage.createTask({
+      id: 'task-1',
+      title: 'Build a Todo App',
+      description: 'Create a simple todo application using React with add, edit, and delete functionality.',
+      mentorId: 'mentor-1',
+      buddyId: 'buddy-1',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      status: 'pending'
+    });
+
+    await dbStorage.createTask({
+      id: 'task-2',
+      title: 'Learn CSS Flexbox',
+      description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
+      mentorId: 'mentor-1',
+      buddyId: 'buddy-1',
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      status: 'in_progress'
+    });
+
+    console.log('[Storage] Database seeded successfully');
+  } catch (error) {
+    console.error('[Storage] Error seeding database:', error);
+    throw error;
+  }
 }
 
 // Create storage instance
@@ -572,7 +729,7 @@ let storage: IStorage = new MemStorage();
 initializeStorage().then(initializedStorage => {
   storage = initializedStorage;
 }).catch(error => {
-  console.error('[Storage] Failed to initialize storage:', error);
+  console.error('[Storage] Critical error initializing storage:', error);
 });
 
 export { storage };

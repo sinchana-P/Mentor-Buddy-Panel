@@ -13,6 +13,9 @@ import DashboardPage from "@/pages/dashboard";
 import MentorsPage from "@/pages/mentors";
 import MentorProfilePage from "@/pages/mentor-profile";
 import BuddyTimelinePage from "@/pages/buddy-timeline";
+import BuddiesPage from "@/pages/buddies";
+import BuddyDetailPage from "@/pages/buddy-detail";
+import TasksPage from "@/pages/tasks";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -68,6 +71,51 @@ function Router() {
           </ProtectedRoute>
         )} />
         
+        <Route path="/buddies" component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <BuddiesPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/buddies/:id" component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <BuddyDetailPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/tasks" component={() => (
+          <ProtectedRoute>
+            <Layout>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <TasksPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
         <Route path="/mentors/:id" component={() => (
           <ProtectedRoute>
             <Layout>
