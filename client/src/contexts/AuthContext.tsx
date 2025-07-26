@@ -52,7 +52,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchUserProfile = async (userId: string) => {
     try {
       console.log('Fetching user profile for ID:', userId);
-      const response = await fetch(`/api/users/${userId}`);
+      
+      // First check if we have a local mapping
+      const mapping = localStorage.getItem('supabase_user_mapping');
+      let localUserId = userId;
+      
+      if (mapping) {
+        const parsed = JSON.parse(mapping);
+        if (parsed.supabaseId === userId) {
+          localUserId = parsed.localUserId;
+          console.log('Using mapped local user ID:', localUserId);
+        }
+      }
+      
+      const response = await fetch(`/api/users/${localUserId}`);
       if (response.ok) {
         const userData = await response.json();
         console.log('User profile fetched successfully:', userData);
@@ -79,10 +92,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: supabaseUser.id,
           email: supabaseUser.email,
-          name: supabaseUser.user_metadata?.name || supabaseUser.email,
+          name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
           role: 'buddy', // Default role
+          domainRole: 'frontend', // Default domain role
         }),
       });
 
@@ -90,6 +103,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = await response.json();
         console.log('User profile created successfully:', userData);
         setUser(userData);
+        
+        // Store the mapping between Supabase ID and our user ID
+        localStorage.setItem('supabase_user_mapping', JSON.stringify({
+          supabaseId: supabaseUser.id,
+          localUserId: userData.id
+        }));
       } else {
         console.error('Failed to create user profile:', await response.text());
       }
