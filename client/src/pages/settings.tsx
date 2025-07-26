@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 export default function Settings() {
   const { user, updateUserRole } = useAuth();
@@ -21,8 +23,9 @@ export default function Settings() {
     name: user?.name || '',
     email: user?.email || '',
     domainRole: user?.domainRole || '',
-    bio: user?.bio || '',
-    avatarUrl: user?.avatarUrl || ''
+    // bio and avatarUrl are not in AuthUser, so remove or add fallback
+    bio: (user as any)?.bio || '',
+    avatarUrl: (user as any)?.avatarUrl || ''
   });
   const [preferences, setPreferences] = useState({
     emailNotifications: true,
@@ -31,11 +34,31 @@ export default function Settings() {
     weeklyReports: false
   });
 
+  // Remove isLoading from useMutation result
+  const { mutate: updateProfile } = useMutation({
+    mutationFn: (data: any) =>
+      apiRequest('PATCH', '/api/settings', data),
+    onSuccess: () => {
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleProfileUpdate = async () => {
     setIsLoading(true);
     try {
       // Update user profile
-      await updateUserRole(profileData.domainRole);
+      // updateUserRole expects a specific type, so cast or validate
+      await updateUserRole(profileData.domainRole as any);
       
       // TODO: Implement API call to update profile data
       // await apiRequest(`/api/users/${user?.id}`, {
@@ -332,15 +355,11 @@ export default function Settings() {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Member Since</Label>
-                <p className="text-sm text-muted-foreground">
-                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                </p>
+                <p className="text-sm text-muted-foreground font-mono">{(user as any)?.createdAt ? new Date((user as any).createdAt).toLocaleDateString() : 'N/A'}</p>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Last Login</Label>
-                <p className="text-sm text-muted-foreground">
-                  {user?.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'N/A'}
-                </p>
+                <p className="text-sm text-muted-foreground">{(user as any)?.lastLoginAt ? new Date((user as any).lastLoginAt).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           </CardContent>

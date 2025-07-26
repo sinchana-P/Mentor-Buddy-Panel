@@ -64,10 +64,8 @@ export default function BuddiesPage() {
   });
 
   const createBuddyMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof buddyFormSchema>) => {
-      const response = await apiRequest('POST', '/api/buddies', data);
-      return response.json();
-    },
+    mutationFn: (data: any) =>
+      apiRequest('POST', '/api/buddies', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/buddies'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Calendar, Plus, Search, Filter, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Calendar, Plus, Search, Filter, CheckCircle, Clock, AlertCircle, Edit, Trash2 } from 'lucide-react';
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,6 +61,24 @@ export default function TasksPage() {
       queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
       setIsCreateDialogOpen(false);
       form.reset();
+    },
+  });
+
+  // Add edit and delete mutations
+  const editTaskMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: Partial<TaskFormData> }) => {
+      await apiRequest('PATCH', `/api/tasks/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
+    },
+  });
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/tasks/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/tasks'] });
     },
   });
 
@@ -251,63 +269,165 @@ export default function TasksPage() {
 
         {/* Tasks List */}
         <div className="space-y-4">
-          {filteredTasks.map((task: any) => (
-            <Card key={task.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(task.status)}
-                    <CardTitle className="text-lg">{task.title}</CardTitle>
+          {filteredTasks.map((task: any) => {
+            const [isEditOpen, setIsEditOpen] = useState(false);
+            const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+            const editForm = useForm<TaskFormData>({
+              resolver: zodResolver(taskSchema),
+              defaultValues: {
+                title: task.title,
+                description: task.description,
+                buddyId: task.buddyId,
+                dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : '',
+              },
+            });
+            return (
+              <Card key={task.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(task.status)}
+                      <CardTitle className="text-lg">{task.title}</CardTitle>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="icon" variant="ghost" onClick={() => setIsEditOpen(true)}><Edit className="w-4 h-4" /></Button>
+                      <Button size="icon" variant="ghost" onClick={() => setIsDeleteOpen(true)}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+                    </div>
+                    <Badge className={getStatusColor(task.status)}>
+                      {task.status || 'pending'}
+                    </Badge>
                   </div>
-                  <Badge className={getStatusColor(task.status)}>
-                    {task.status || 'pending'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">{task.description}</p>
-                
-                <div className="flex items-center justify-between text-sm text-gray-500">
-                  <div className="flex items-center gap-4">
-                    <span>Assigned to: {task.buddy?.name || 'Unknown'}</span>
-                    {task.dueDate && (
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        Due: {new Date(task.dueDate).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
-                </div>
-
-                {task.submissions?.length > 0 && (
-                  <div className="mt-4 pt-4 border-t">
-                    <h4 className="font-medium mb-2">Latest Submission:</h4>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {task.submissions[0].notes && (
-                        <p>{task.submissions[0].notes}</p>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">{task.description}</p>
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center gap-4">
+                      <span>Assigned to: {task.buddy?.name || 'Unknown'}</span>
+                      {task.dueDate && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-4 w-4" />
+                          Due: {new Date(task.dueDate).toLocaleDateString()}
+                        </div>
                       )}
-                      <div className="flex gap-4 mt-2">
-                        {task.submissions[0].githubLink && (
-                          <a href={task.submissions[0].githubLink} target="_blank" rel="noopener noreferrer"
-                             className="text-blue-600 hover:underline">
-                            GitHub Repository
-                          </a>
+                    </div>
+                    <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  {task.submissions?.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-medium mb-2">Latest Submission:</h4>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        {task.submissions[0].notes && (
+                          <p>{task.submissions[0].notes}</p>
                         )}
-                        {task.submissions[0].deployedUrl && (
-                          <a href={task.submissions[0].deployedUrl} target="_blank" rel="noopener noreferrer"
-                             className="text-blue-600 hover:underline">
-                            Live Demo
-                          </a>
-                        )}
+                        <div className="flex gap-4 mt-2">
+                          {task.submissions[0].githubLink && (
+                            <a href={task.submissions[0].githubLink} target="_blank" rel="noopener noreferrer"
+                               className="text-blue-600 hover:underline">
+                              GitHub Repository
+                            </a>
+                          )}
+                          {task.submissions[0].deployedUrl && (
+                            <a href={task.submissions[0].deployedUrl} target="_blank" rel="noopener noreferrer"
+                               className="text-blue-600 hover:underline">
+                              Live Demo
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+                  {/* Edit Task Modal */}
+                  <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle>Edit Task</DialogTitle></DialogHeader>
+                      <Form {...editForm}>
+                        <form onSubmit={editForm.handleSubmit(data => editTaskMutation.mutate({ id: task.id, data }))} className="space-y-4">
+                          <FormField
+                            control={editForm.control}
+                            name="title"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Title</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Enter task title" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                  <Textarea placeholder="Enter task description" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="buddyId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Assign to Buddy</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a buddy" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {Array.isArray(buddies) && buddies.map((buddy: any) => (
+                                      <SelectItem key={buddy.id} value={buddy.id}>
+                                        {buddy.user?.name || 'Unknown Buddy'} ({buddy.user?.domainRole || 'Unknown'})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={editForm.control}
+                            name="dueDate"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Due Date (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input type="date" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex justify-end gap-2 pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                            <Button type="submit" disabled={editTaskMutation.isPending}>{editTaskMutation.isPending ? 'Saving...' : 'Save'}</Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
+                  {/* Delete Task Modal */}
+                  <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                    <DialogContent>
+                      <DialogHeader><DialogTitle>Delete Task</DialogTitle></DialogHeader>
+                      <p>Are you sure you want to delete this task?</p>
+                      <div className="flex justify-end gap-2 mt-4">
+                        <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="destructive" onClick={() => deleteTaskMutation.mutate(task.id)} disabled={deleteTaskMutation.isPending}>{deleteTaskMutation.isPending ? 'Deleting...' : 'Delete'}</Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            );
+          })}
 
           {filteredTasks.length === 0 && (
             <div className="text-center py-12">

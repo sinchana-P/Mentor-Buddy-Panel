@@ -31,12 +31,9 @@ export default function AddResourceModal({ isOpen, onClose }: AddResourceModalPr
 
   const addResourceMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest('/api/resources', {
-        method: 'POST',
-        body: {
-          ...data,
-          tags: data.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
-        },
+      apiRequest('POST', '/api/resources', {
+        ...data,
+        tags: data.tags.split(',').map((tag: string) => tag.trim()).filter(Boolean)
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/resources'] });

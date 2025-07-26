@@ -1,5 +1,7 @@
 // Test authentication helper - for development purposes
 import { useAuth } from '@/hooks/useAuth';
+import { useMutation } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
 
 export function TestAuthButton() {
   const { user } = useAuth();

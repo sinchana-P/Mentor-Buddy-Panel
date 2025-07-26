@@ -20,7 +20,11 @@ import {
   submissions,
   topics,
   buddyTopicProgress,
-  resources
+  resources,
+  insertUserSchema,
+  insertBuddySchema,
+  insertTaskSchema,
+  insertTopicSchema
 } from "@shared/schema";
 import { eq, and, like, desc } from 'drizzle-orm';
 import { db } from './db';
@@ -66,7 +70,19 @@ export class DbStorage implements IStorage {
       err.code = 'DUPLICATE_EMAIL';
       throw err;
     }
-    const result = await db.insert(users).values(insertUser).returning();
+    // Strictly construct the object for .values()
+    const allowedRoles = ["manager", "mentor", "buddy"];
+    const allowedDomainRoles = ["frontend", "backend", "devops", "qa", "hr"];
+    const role = typeof insertUser.role === "string" && allowedRoles.includes(insertUser.role) ? insertUser.role : "buddy";
+    const domainRole = typeof insertUser.domainRole === "string" && allowedDomainRoles.includes(insertUser.domainRole) ? insertUser.domainRole : "frontend";
+    const userToInsert = {
+      name: insertUser.name,
+      email: insertUser.email,
+      role,
+      domainRole,
+      avatarUrl: insertUser.avatarUrl
+    };
+    const result = await db.insert(users).values(userToInsert).returning();
     const user = result[0];
     console.log(`[DbStorage] User created successfully:`, user);
     return user;
@@ -149,23 +165,21 @@ export class DbStorage implements IStorage {
 
   // Mentor management
   async getMentors(filters: { role?: string; status?: string; search?: string }): Promise<any[]> {
-    let query = db
+    let conditions = [];
+    if (filters?.status && filters.status !== 'all') {
+      conditions.push(eq(mentors.isActive, filters.status === 'active'));
+    }
+    if (filters?.search) {
+      conditions.push(like(users.name, `%${filters.search}%`));
+    }
+    let baseQuery = db
       .select({
         mentor: mentors,
         user: users
       })
       .from(mentors)
       .leftJoin(users, eq(mentors.userId, users.id));
-    
-    // Apply filters
-    if (filters?.status && filters.status !== 'all') {
-      query = query.where(eq(mentors.isActive, filters.status === 'active'));
-    }
-    
-    if (filters?.search) {
-      query = query.where(like(users.name, `%${filters.search}%`));
-    }
-    
+    const query = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const results = await query;
     
     return results.map(result => {
@@ -225,32 +239,40 @@ export class DbStorage implements IStorage {
   }
 
   async updateMentor(id: string, updates: Partial<Mentor>): Promise<Mentor> {
+    // Only set fields that exist in the schema (remove updatedAt if not in schema)
+    const allowedUpdates: Partial<Mentor> = {};
+    for (const key of Object.keys(updates)) {
+      if (key in mentors) {
+        (allowedUpdates as any)[key] = (updates as any)[key];
+      }
+    }
     const result = await db.update(mentors)
-      .set({ ...updates, updatedAt: new Date() })
+      .set(allowedUpdates)
       .where(eq(mentors.id, id))
       .returning();
-    
     if (result.length === 0) {
       throw new Error('Mentor not found');
     }
-    
     return result[0];
   }
 
+  async deleteMentor(id: string): Promise<void> {
+    await db.delete(mentors).where(eq(mentors.id, id));
+  }
+
   async getMentorBuddies(mentorId: string, status?: string): Promise<any[]> {
-    let query = db
+    let conditions = [eq(buddies.assignedMentorId, mentorId)];
+    if (status && status !== 'all') {
+      conditions.push(eq(buddies.status, status as any));
+    }
+    let baseQuery = db
       .select({
         buddy: buddies,
         user: users
       })
       .from(buddies)
-      .leftJoin(users, eq(buddies.userId, users.id))
-      .where(eq(buddies.assignedMentorId, mentorId));
-    
-    if (status && status !== 'all') {
-      query = query.where(eq(buddies.status, status as any));
-    }
-    
+      .leftJoin(users, eq(buddies.userId, users.id));
+    const query = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const results = await query;
     
     return results.map(result => ({
@@ -310,29 +332,24 @@ export class DbStorage implements IStorage {
   }
 
   async getAllBuddies(filters?: { status?: string; domain?: string; search?: string }): Promise<any[]> {
-    let query = db
+    let conditions = [];
+    if (filters?.status && filters.status !== 'all') {
+      conditions.push(eq(buddies.status, filters.status as any));
+    }
+    if (filters?.domain && filters.domain !== 'all') {
+      conditions.push(eq(users.domainRole, filters.domain as any));
+    }
+    if (filters?.search) {
+      conditions.push(like(users.name, `%${filters.search}%`));
+    }
+    let baseQuery = db
       .select({
         buddy: buddies,
         user: users
       })
       .from(buddies)
       .leftJoin(users, eq(buddies.userId, users.id));
-    
-    // Filter by status
-    if (filters?.status && filters.status !== 'all') {
-      query = query.where(eq(buddies.status, filters.status as any));
-    }
-    
-    // Filter by domain
-    if (filters?.domain && filters.domain !== 'all') {
-      query = query.where(eq(users.domainRole, filters.domain as any));
-    }
-    
-    // Filter by search
-    if (filters?.search) {
-      query = query.where(like(users.name, `%${filters.search}%`));
-    }
-    
+    const query = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const results = await query;
     
     return results.map(result => ({
@@ -347,7 +364,17 @@ export class DbStorage implements IStorage {
   }
 
   async createBuddy(buddy: InsertBuddy): Promise<Buddy> {
-    const result = await db.insert(buddies).values(buddy).returning();
+    // Strictly construct the object for .values()
+    const allowedStatuses = ["active", "inactive", "exited"];
+    const status = typeof buddy.status === "string" && allowedStatuses.includes(buddy.status) ? buddy.status : "active";
+    const buddyToInsert = {
+      userId: buddy.userId,
+      assignedMentorId: buddy.assignedMentorId,
+      status,
+      joinDate: buddy.joinDate,
+      progress: buddy.progress
+    };
+    const result = await db.insert(buddies).values(buddyToInsert).returning();
     return result[0];
   }
 
@@ -446,7 +473,18 @@ export class DbStorage implements IStorage {
 
   // Task management
   async createTask(task: InsertTask): Promise<Task> {
-    const result = await db.insert(tasks).values(task).returning();
+    // Strictly construct the object for .values()
+    const allowedStatuses = ["pending", "in_progress", "completed", "overdue"];
+    const status = typeof task.status === "string" && allowedStatuses.includes(task.status) ? task.status : "pending";
+    const taskToInsert = {
+      mentorId: task.mentorId,
+      buddyId: task.buddyId,
+      title: task.title,
+      description: task.description,
+      status,
+      dueDate: task.dueDate
+    };
+    const result = await db.insert(tasks).values(taskToInsert).returning();
     return result[0];
   }
 
@@ -468,10 +506,13 @@ export class DbStorage implements IStorage {
       conditions.push(eq(tasks.buddyId, filters.buddyId));
     }
     
-    let query = db.select().from(tasks);
-    if (conditions.length > 0) {
-      query = query.where(and(...conditions));
+    // Filter by search
+    if (filters?.search) {
+      conditions.push(like(tasks.title, `%${filters.search}%`));
     }
+
+    let baseQuery = db.select().from(tasks);
+    const query = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     
     const results = await query;
     
@@ -480,6 +521,27 @@ export class DbStorage implements IStorage {
       mentor: null, // Would need to join with mentors table
       buddy: null   // Would need to join with buddies table
     }));
+  }
+
+  async updateTask(id: string, updates: Partial<Task>): Promise<Task> {
+    const allowedUpdates: Partial<Task> = {};
+    for (const key of Object.keys(updates)) {
+      if (key in tasks) {
+        (allowedUpdates as any)[key] = (updates as any)[key];
+      }
+    }
+    const result = await db.update(tasks)
+      .set(allowedUpdates)
+      .where(eq(tasks.id, id))
+      .returning();
+    if (result.length === 0) {
+      throw new Error('Task not found');
+    }
+    return result[0];
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    await db.delete(tasks).where(eq(tasks.id, id));
   }
 
   // Submission management
@@ -498,7 +560,15 @@ export class DbStorage implements IStorage {
   }
 
   async createTopic(topic: InsertTopic): Promise<Topic> {
-    const result = await db.insert(topics).values(topic).returning();
+    // Strictly construct the object for .values()
+    const allowedDomainRoles = ["frontend", "backend", "devops", "qa", "hr"];
+    const domainRole = typeof topic.domainRole === "string" && allowedDomainRoles.includes(topic.domainRole) ? topic.domainRole : "frontend";
+    const topicToInsert = {
+      name: topic.name,
+      domainRole,
+      category: topic.category
+    };
+    const result = await db.insert(topics).values(topicToInsert).returning();
     return result[0];
   }
 
@@ -510,18 +580,21 @@ export class DbStorage implements IStorage {
 
   // Resource management
   async getAllResources(filters?: { category?: string; difficulty?: string; type?: string; search?: string }): Promise<any[]> {
-    let query = db.select().from(resources);
-    // Apply filters
+    let conditions = [];
     if (filters?.category && filters.category !== 'all') {
-      query = query.where(eq(resources.category, filters.category));
+      conditions.push(eq(resources.category, filters.category));
     }
     if (filters?.difficulty && filters.difficulty !== 'all') {
-      query = query.where(eq(resources.difficulty, filters.difficulty));
+      conditions.push(eq(resources.difficulty, filters.difficulty));
     }
     if (filters?.type && filters.type !== 'all') {
-      query = query.where(eq(resources.type, filters.type));
+      conditions.push(eq(resources.type, filters.type));
     }
-    // TODO: Add search filter if needed
+    if (filters?.search) {
+      conditions.push(like(resources.title, `%${filters.search}%`));
+    }
+    let baseQuery = db.select().from(resources);
+    const query = conditions.length > 0 ? baseQuery.where(and(...conditions)) : baseQuery;
     const result = await query;
     return result;
   }

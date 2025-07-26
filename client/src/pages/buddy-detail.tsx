@@ -120,11 +120,8 @@ export default function BuddyDetailPage() {
   const displayPortfolio = (portfolio as any[]).length > 0 ? portfolio as any[] : mockPortfolio;
 
   const updateProgressMutation = useMutation({
-    mutationFn: ({ topicId, checked }: { topicId: string; checked: boolean }) =>
-      apiRequest(`/api/buddies/${id}/progress/${topicId}`, {
-        method: 'PATCH',
-        body: { checked },
-      }),
+    mutationFn: (data: any) =>
+      apiRequest('PATCH', `/api/buddies/${id}/progress/${data.topicId}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/buddies', id, 'progress'] });
     },

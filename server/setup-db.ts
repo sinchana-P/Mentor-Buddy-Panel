@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from '../shared/schema.js';
-import { users, mentors, buddies, tasks, submissions, topics, buddyTopicProgress } from '../shared/schema.js';
+import * as schema from './shared/schema.js';
+import { users, mentors, buddies, tasks, submissions, topics, buddyTopicProgress } from './shared/schema.js';
 import { eq } from 'drizzle-orm';
 
 const connectionString = 'postgresql://postgres:SinchanaPGudagi@db.fbxmsxjbrffgejwgskeg.supabase.co:5432/postgres';

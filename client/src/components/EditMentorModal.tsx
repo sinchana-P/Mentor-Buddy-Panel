@@ -29,10 +29,7 @@ export default function EditMentorModal({ isOpen, onClose, mentor }: EditMentorM
 
   const updateMentorMutation = useMutation({
     mutationFn: (data: any) =>
-      apiRequest(`/api/mentors/${mentor.id}`, {
-        method: 'PATCH',
-        body: data,
-      }),
+      apiRequest('PATCH', `/api/mentors/${mentor.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mentors', mentor.id] });
       queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });

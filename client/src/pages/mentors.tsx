@@ -50,28 +50,8 @@ export default function MentorsPage() {
   });
 
   const createMentorMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof mentorFormSchema>) => {
-      // First create the user
-      const user = await apiRequest('POST', '/api/users', {
-        name: data.name,
-        email: data.email,
-        role: 'mentor',
-        domainRole: data.domainRole,
-      });
-
-      const userData = await user.json();
-
-      // Then create the mentor profile
-      const mentorRes = await apiRequest('POST', '/api/mentors', {
-        userId: userData.id,
-        expertise: data.expertise,
-        experience: data.experience,
-        responseRate: 0,
-        isActive: true,
-      });
-
-      return mentorRes.json();
-    },
+    mutationFn: (data: any) =>
+      apiRequest('POST', '/api/mentors', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
       queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });

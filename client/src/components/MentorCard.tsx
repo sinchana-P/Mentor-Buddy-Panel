@@ -5,9 +5,19 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import MessageModal from './MessageModal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface MentorCardProps {
   mentor: {
@@ -28,9 +38,47 @@ interface MentorCardProps {
   };
 }
 
+const mentorFormSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  domainRole: z.enum(['frontend', 'backend', 'devops', 'qa', 'hr']),
+  expertise: z.string().min(10, 'Please describe expertise (minimum 10 characters)'),
+  experience: z.string().min(10, 'Please describe experience (minimum 10 characters)'),
+});
+
 export default function MentorCard({ mentor }: MentorCardProps) {
   const [, setLocation] = useLocation();
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const mentorForm = useForm({
+    resolver: zodResolver(mentorFormSchema),
+    defaultValues: {
+      name: mentor.user?.name || '',
+      domainRole: mentor.user?.domainRole || 'frontend',
+      expertise: mentor.expertise,
+      experience: mentor.experience,
+    },
+  });
+  const editMutation = useMutation({
+    mutationFn: (data: any) => apiRequest('PATCH', `/api/mentors/${mentor.id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+      setIsEditOpen(false);
+      toast({ title: 'Mentor updated', description: 'Mentor details updated.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to update mentor', variant: 'destructive' }),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: () => apiRequest('DELETE', `/api/mentors/${mentor.id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+      setIsDeleteOpen(false);
+      toast({ title: 'Mentor deleted', description: 'Mentor has been removed.' });
+    },
+    onError: () => toast({ title: 'Error', description: 'Failed to delete mentor', variant: 'destructive' }),
+  });
 
   const handleClick = () => {
     setLocation(`/mentors/${mentor.id}`);
@@ -107,6 +155,49 @@ export default function MentorCard({ mentor }: MentorCardProps) {
               <MessageCircle className="h-4 w-4 mr-2" />
               Message
             </Button>
+          </div>
+
+          <div className="flex justify-end gap-2 mb-2">
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); setIsEditOpen(true); }}><Edit className="w-4 h-4" /></Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Edit Mentor</DialogTitle></DialogHeader>
+                <form onSubmit={mentorForm.handleSubmit(data => editMutation.mutate(data))} className="space-y-4">
+                  <Input {...mentorForm.register('name')} placeholder="Full Name" />
+                  <Select value={mentorForm.watch('domainRole')} onValueChange={v => mentorForm.setValue('domainRole', v)}>
+                    <SelectTrigger><SelectValue placeholder="Domain" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="frontend">Frontend</SelectItem>
+                      <SelectItem value="backend">Backend</SelectItem>
+                      <SelectItem value="devops">DevOps</SelectItem>
+                      <SelectItem value="qa">QA</SelectItem>
+                      <SelectItem value="hr">HR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Textarea {...mentorForm.register('expertise')} placeholder="Expertise" />
+                  <Textarea {...mentorForm.register('experience')} placeholder="Experience" />
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={editMutation.isPending}>{editMutation.isPending ? 'Saving...' : 'Save'}</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" onClick={e => { e.stopPropagation(); setIsDeleteOpen(true); }}><Trash2 className="w-4 h-4 text-red-500" /></Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Delete Mentor</DialogTitle></DialogHeader>
+                <p>Are you sure you want to delete this mentor?</p>
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+                  <Button type="button" variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? 'Deleting...' : 'Delete'}</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </CardContent>
       </Card>

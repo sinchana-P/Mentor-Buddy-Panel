@@ -13,7 +13,7 @@ import {
   type InsertTopic,
   type BuddyTopicProgress,
   type InsertBuddyTopicProgress
-} from "@shared/schema";
+} from "server/shared/schema";
 import { randomUUID } from "crypto";
 
 // Extended interface with all CRUD methods needed for the mentoring platform
@@ -35,6 +35,7 @@ export interface IStorage {
   createMentor(mentor: InsertMentor): Promise<Mentor>;
   updateMentor(id: string, updates: Partial<Mentor>): Promise<Mentor>;
   getMentorBuddies(mentorId: string, status?: string): Promise<any[]>;
+  deleteMentor(id: string): Promise<void>;
 
   // Buddy management
   getBuddyById(id: string): Promise<any>;
@@ -50,6 +51,8 @@ export interface IStorage {
   createTask(task: InsertTask): Promise<Task>;
   getTaskById(id: string): Promise<Task | undefined>;
   getAllTasks(filters?: { status?: string; search?: string; buddyId?: string }): Promise<any[]>;
+  updateTask(id: string, updates: Partial<Task>): Promise<Task>;
+  deleteTask(id: string): Promise<void>;
 
   // Submission management
   createSubmission(submission: InsertSubmission): Promise<Submission>;
@@ -344,6 +347,10 @@ export class MemStorage implements IStorage {
     return updatedMentor;
   }
 
+  async deleteMentor(id: string): Promise<void> {
+    this.mentors.delete(id);
+  }
+
   async getMentorBuddies(mentorId: string, status?: string): Promise<any[]> {
     let buddies = Array.from(this.buddies.values())
       .filter(buddy => buddy.assignedMentorId === mentorId);
@@ -608,6 +615,20 @@ export class MemStorage implements IStorage {
         buddy: buddy ? { ...buddy, user: buddyUser } : null
       };
     });
+  }
+
+  async updateTask(id: string, updates: Partial<Task>): Promise<Task> {
+    const task = this.tasks.get(id);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+    const updatedTask = { ...task, ...updates, updatedAt: new Date() };
+    this.tasks.set(id, updatedTask);
+    return updatedTask;
+  }
+
+  async deleteTask(id: string): Promise<void> {
+    this.tasks.delete(id);
   }
 
   // Submission methods

@@ -25,11 +25,8 @@ export default function AssignBuddyModal({ isOpen, onClose, mentorId, mentorName
   });
 
   const assignBuddyMutation = useMutation({
-    mutationFn: ({ buddyId, mentorId }: { buddyId: string; mentorId: string }) =>
-      apiRequest(`/api/buddies/${buddyId}/assign`, {
-        method: 'PATCH',
-        body: { mentorId },
-      }),
+    mutationFn: (data: any) =>
+      apiRequest('POST', '/api/assign-buddy', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/mentors', mentorId, 'buddies'] });
       queryClient.invalidateQueries({ queryKey: ['/api/buddies'] });

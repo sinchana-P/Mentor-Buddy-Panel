@@ -9,7 +9,7 @@ import {
   insertSubmissionSchema,
   insertTopicSchema,
   insertBuddyTopicProgressSchema
-} from "@shared/schema";
+} from "server/shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -52,7 +52,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('[POST /api/users] Error:', error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid user data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid user data", errors: error.issues });
       }
       if (error.code === 'DUPLICATE_EMAIL') {
         return res.status(409).json({ message: 'Email already exists' });
@@ -273,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(submission);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid submission data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid submission data", errors: error.issues });
       }
       res.status(500).json({ message: "Internal server error" });
     }
@@ -297,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(topic);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid topic data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid topic data", errors: error.issues });
       }
       res.status(500).json({ message: "Internal server error" });
     }
@@ -366,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(mentor);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid mentor data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid mentor data", errors: error.issues });
       }
       res.status(500).json({ message: "Internal server error" });
     }
@@ -455,7 +455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(task);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid task data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid task data", errors: error.issues });
       }
       res.status(500).json({ message: "Internal server error" });
     }
@@ -469,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(submission);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid submission data", errors: error.errors });
+        return res.status(400).json({ message: "Invalid submission data", errors: error.issues });
       }
       res.status(500).json({ message: "Internal server error" });
     }
@@ -481,6 +481,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { domainRole } = req.query;
       const topics = await storage.getTopics(domainRole as string);
       res.json(topics);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Mentor DELETE
+  app.delete("/api/mentors/:id", async (req, res) => {
+    try {
+      await storage.deleteMentor(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Task PATCH (update)
+  app.patch("/api/tasks/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const task = await storage.updateTask(req.params.id, updates);
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Task DELETE
+  app.delete("/api/tasks/:id", async (req, res) => {
+    try {
+      await storage.deleteTask(req.params.id);
+      res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }
