@@ -36,6 +36,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
+    // Set default demo user for direct access
+    const demoUser = {
+      "email": "demo@mentorpanel.com",
+      "name": "Demo Manager", 
+      "role": "manager",
+      "domainRole": "frontend",
+      "id": "demo-user-id",
+      "avatarUrl": null,
+      "createdAt": new Date().toISOString(),
+      "updatedAt": new Date().toISOString()
+    };
+    
+    localStorage.setItem('user_profile', JSON.stringify(demoUser));
+    setUser(demoUser);
+    setLoading(false);
+
+    // COMMENTED OUT: Supabase authentication to prevent API calls
+    /*
     // Get initial session
     const getSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -75,6 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
+    */
   }, []);
 
   const fetchUserProfile = async (userId: string) => {
