@@ -55,10 +55,7 @@ app.use((req, res, next) => {
   // Serve the app on the port specified in the environment variable PORT
   // Default to 3000 if not specified.
   const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-  server.listen({
-    port,
-    host: "localhost",
-  }, () => {
+  server.listen(port, () => {
     log(`serving on port ${port}`);
   });
 })();
