@@ -51,13 +51,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for ID:', userId);
       const response = await fetch(`/api/users/${userId}`);
       if (response.ok) {
         const userData = await response.json();
+        console.log('User profile fetched successfully:', userData);
         setUser(userData);
+      } else {
+        console.log('User profile not found, response status:', response.status);
+        // If user doesn't exist, try to get user info from Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          console.log('Creating new user profile for:', session.user);
+          await createUserProfileFromSession(session.user);
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const createUserProfileFromSession = async (supabaseUser: any) => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: supabaseUser.id,
+          email: supabaseUser.email,
+          name: supabaseUser.user_metadata?.name || supabaseUser.email,
+          role: 'buddy', // Default role
+        }),
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('User profile created successfully:', userData);
+        setUser(userData);
+      } else {
+        console.error('Failed to create user profile:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error creating user profile:', error);
     }
   };
 
