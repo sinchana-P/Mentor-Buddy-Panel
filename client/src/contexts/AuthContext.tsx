@@ -72,6 +72,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
       } else {
         console.log('User profile not found, response status:', response.status);
+        
+        // Check if we have cached profile data
+        const cachedProfile = localStorage.getItem('user_profile');
+        if (cachedProfile) {
+          const profileData = JSON.parse(cachedProfile);
+          console.log('Using cached profile:', profileData);
+          setUser(profileData);
+          return;
+        }
+        
         // If user doesn't exist, try to get user info from Supabase session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
@@ -105,6 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
         
         // Store the mapping between Supabase ID and our user ID
+        localStorage.setItem('user_profile', JSON.stringify(userData));
         localStorage.setItem('supabase_user_mapping', JSON.stringify({
           supabaseId: supabaseUser.id,
           localUserId: userData.id
@@ -141,7 +152,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            id: data.user.id,
             email,
             name,
             role: 'buddy', // Default role
@@ -189,6 +199,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Clear cached data
+    localStorage.removeItem('user_profile');
+    localStorage.removeItem('supabase_user_mapping');
+    setUser(null);
+    setSession(null);
   };
 
   const updateUserRole = async (role: 'manager' | 'mentor' | 'buddy', domainRole?: string) => {
