@@ -534,4 +534,45 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { DbStorage } from './db-storage';
+
+// Initialize storage with fallback mechanism
+async function initializeStorage(): Promise<IStorage> {
+  // For now, use memory storage until database connection is properly configured
+  console.log('[Storage] Using memory storage (database connection pending)');
+  const memStorage = new MemStorage();
+  
+  // Initialize with some test data for demonstration
+  const testUser = await memStorage.createUser({
+    id: '1a11c298-2293-4654-ab53-bdc648218570',
+    email: 'test@example.com',
+    name: 'Test User',
+    role: 'mentor',
+    domainRole: 'frontend',
+    createdAt: new Date()
+  });
+  
+  await memStorage.createMentor({
+    id: 'mentor-1',
+    userId: testUser.id,
+    bio: 'Experienced frontend developer',
+    expertise: ['React', 'TypeScript', 'JavaScript'],
+    responseRate: 95,
+    isActive: true
+  });
+  
+  console.log('[Storage] Initialized with test data');
+  return memStorage;
+}
+
+// Create storage instance
+let storage: IStorage = new MemStorage();
+
+// Initialize storage asynchronously
+initializeStorage().then(initializedStorage => {
+  storage = initializedStorage;
+}).catch(error => {
+  console.error('[Storage] Failed to initialize storage:', error);
+});
+
+export { storage };
