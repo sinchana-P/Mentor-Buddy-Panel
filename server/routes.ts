@@ -334,6 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Mentor routes
   app.get("/api/mentors", async (req, res) => {
+    console.log('[GET /api/mentors] Fetching all mentors...');
     try {
       const { role, status, search } = req.query;
       const mentors = await storage.getMentors({
@@ -342,8 +343,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search: search as string,
       });
       res.json(mentors);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+    } catch (error: any) {
+      res.status(500).json({
+        message: "Internal server error",
+        error: error?.message ?? error,
+      });
     }
   });
 
