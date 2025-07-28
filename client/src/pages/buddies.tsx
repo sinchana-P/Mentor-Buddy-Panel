@@ -15,27 +15,10 @@ import { Search, UserPlus, Filter } from 'lucide-react';
 import { Link } from 'wouter';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import type { Buddy, DomainRole } from '../types';
 
 
-type Buddy = {
-  id: string;
-  user: {
-    name: string;
-    email: string;
-    avatarUrl?: string;
-  };
-  mentor: {
-    name: string;
-  } | null;
-  domainRole: string;
-  status: 'active' | 'inactive' | 'exited';
-  startDate: string;
-  stats: {
-    completedTasks: number;
-    totalTasks: number;
-  };
-};
-
+// Use the shared Buddy type from ../types
 const buddyFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email'),

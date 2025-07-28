@@ -20,7 +20,7 @@ export default function BuddyDetailPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('tasks');
 
-  const { data: buddy, isLoading } = useQuery({
+  const { data: buddy = {} as any, isLoading } = useQuery({
     queryKey: ['/api/buddies', id],
     enabled: !!id,
   });

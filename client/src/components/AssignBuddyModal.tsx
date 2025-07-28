@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { apiRequest } from '@/lib/queryClient';
 import { Loader2 } from 'lucide-react';
+import type { Buddy } from '../types';
 
 interface AssignBuddyModalProps {
   isOpen: boolean;
@@ -19,10 +20,12 @@ export default function AssignBuddyModal({ isOpen, onClose, mentorId, mentorName
   const queryClient = useQueryClient();
 
   // Fetch available buddies (not assigned to any mentor)
-  const { data: availableBuddies = [], isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ['/api/buddies', { status: 'active', unassigned: true }],
     enabled: isOpen,
   });
+
+  const availableBuddies: Buddy[] = (data?.filter((b: any) => !b.mentor) ?? []) as Buddy[];
 
   const assignBuddyMutation = useMutation({
     mutationFn: (data: any) =>
@@ -71,7 +74,7 @@ export default function AssignBuddyModal({ isOpen, onClose, mentorId, mentorName
                     No available buddies
                   </SelectItem>
                 ) : (
-                  availableBuddies.map((buddy: any) => (
+                  availableBuddies.map((buddy: Buddy) => (
                     <SelectItem key={buddy.id} value={buddy.id}>
                       {buddy.user?.name || 'Unknown Buddy'} ({buddy.user?.domainRole || 'Unknown'})
                     </SelectItem>

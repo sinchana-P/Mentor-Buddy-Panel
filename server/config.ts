@@ -17,8 +17,8 @@ export const config = {
   SESSION_SECRET: process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this-in-production',
   
   // CORS Configuration
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5175',
   
   // Development Configuration
-  VITE_API_URL: process.env.VITE_API_URL || 'http://localhost:3000',
-}; 
+  VITE_API_URL: process.env.VITE_API_URL || 'http://localhost:3001',
+};

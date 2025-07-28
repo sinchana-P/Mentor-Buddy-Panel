@@ -12,7 +12,10 @@ import {
   type Topic,
   type InsertTopic,
   type BuddyTopicProgress,
-  type InsertBuddyTopicProgress
+  type InsertBuddyTopicProgress,
+  type Curriculum,
+  type InsertCurriculum,
+  DomainRole // <--- import DomainRole
 } from "server/shared/schema";
 import { randomUUID } from "crypto";
 
@@ -36,11 +39,13 @@ export interface IStorage {
   updateMentor(id: string, updates: Partial<Mentor>): Promise<Mentor>;
   getMentorBuddies(mentorId: string, status?: string): Promise<any[]>;
   deleteMentor(id: string): Promise<void>;
+  getAllMentors(filters?: { domain?: string; search?: string }): Promise<any[]>;
 
   // Buddy management
   getBuddyById(id: string): Promise<any>;
   getAllBuddies(filters?: { status?: string; domain?: string; search?: string }): Promise<any[]>;
   createBuddy(buddy: InsertBuddy): Promise<Buddy>;
+  updateBuddy(id: string, updates: Partial<Buddy>): Promise<Buddy>;
   getBuddyTasks(buddyId: string): Promise<any[]>;
   getBuddyProgress(buddyId: string): Promise<any>;
   updateBuddyTopicProgress(buddyId: string, topicId: string, checked: boolean): Promise<any>;
@@ -56,17 +61,32 @@ export interface IStorage {
 
   // Submission management
   createSubmission(submission: InsertSubmission): Promise<Submission>;
+  getSubmissionsByTaskId(taskId: string): Promise<any[]>;
 
   // Topic management
   getTopics(domainRole?: string): Promise<Topic[]>;
+  getAllTopics(): Promise<Topic[]>;
+  getTopicById(id: string): Promise<Topic | undefined>;
   createTopic(topic: InsertTopic): Promise<Topic>;
+  updateTopic(id: string, updates: Partial<Topic>): Promise<Topic>;
+  deleteTopic(id: string): Promise<void>;
 
   // Progress tracking
   createBuddyTopicProgress(progress: InsertBuddyTopicProgress): Promise<BuddyTopicProgress>;
 
   // Resource management
   getAllResources(filters?: { category?: string; difficulty?: string; type?: string; search?: string }): Promise<any[]>;
+  getResourceById(id: string): Promise<any | undefined>;
   createResource(resource: any): Promise<any>;
+  updateResource(id: string, updates: any): Promise<any>;
+  deleteResource(id: string): Promise<void>;
+  
+  // Curriculum management
+  getAllCurriculum(filters?: { domain?: string; search?: string }): Promise<Curriculum[]>;
+  getCurriculumById(id: string): Promise<Curriculum | undefined>;
+  createCurriculum(curriculum: InsertCurriculum): Promise<Curriculum>;
+  updateCurriculum(id: string, updates: Partial<Curriculum>): Promise<Curriculum>;
+  deleteCurriculum(id: string): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -77,6 +97,8 @@ export class MemStorage implements IStorage {
   private submissions: Map<string, Submission>;
   private topics: Map<string, Topic>;
   private buddyTopicProgress: Map<string, BuddyTopicProgress>;
+  private curriculum: Map<string, Curriculum>;
+  private resources: Map<string, any>;
 
   constructor() {
     this.users = new Map();
@@ -86,12 +108,17 @@ export class MemStorage implements IStorage {
     this.submissions = new Map();
     this.topics = new Map();
     this.buddyTopicProgress = new Map();
+    this.curriculum = new Map();
+    this.resources = new Map();
 
     // Initialize with some default topics for each domain
     this.initializeDefaultTopics();
+    // Initialize with some default curriculum items
+    this.initializeDefaultCurriculum();
   }
 
   private initializeDefaultTopics() {
+    const allowedDomainRoles: DomainRole[] = ["frontend", "backend", "devops", "qa", "hr"];
     const defaultTopics = [
       // Frontend topics
       { name: "React Fundamentals", category: "Framework", domainRole: "frontend" },
@@ -100,7 +127,6 @@ export class MemStorage implements IStorage {
       { name: "State Management", category: "Data Flow", domainRole: "frontend" },
       { name: "Testing Strategies", category: "Quality Assurance", domainRole: "frontend" },
       { name: "Performance Optimization", category: "Performance", domainRole: "frontend" },
-
       // Backend topics
       { name: "Node.js Fundamentals", category: "Runtime", domainRole: "backend" },
       { name: "Database Design", category: "Data", domainRole: "backend" },
@@ -108,7 +134,6 @@ export class MemStorage implements IStorage {
       { name: "Authentication & Authorization", category: "Security", domainRole: "backend" },
       { name: "Error Handling", category: "Reliability", domainRole: "backend" },
       { name: "Microservices Architecture", category: "Architecture", domainRole: "backend" },
-
       // DevOps topics
       { name: "Docker Containerization", category: "Containers", domainRole: "devops" },
       { name: "Kubernetes Orchestration", category: "Orchestration", domainRole: "devops" },
@@ -116,7 +141,6 @@ export class MemStorage implements IStorage {
       { name: "Infrastructure as Code", category: "IaC", domainRole: "devops" },
       { name: "Monitoring & Logging", category: "Observability", domainRole: "devops" },
       { name: "Cloud Platform Management", category: "Cloud", domainRole: "devops" },
-
       // QA topics
       { name: "Test Planning", category: "Strategy", domainRole: "qa" },
       { name: "Automated Testing", category: "Automation", domainRole: "qa" },
@@ -124,7 +148,6 @@ export class MemStorage implements IStorage {
       { name: "Performance Testing", category: "Performance", domainRole: "qa" },
       { name: "Security Testing", category: "Security", domainRole: "qa" },
       { name: "User Acceptance Testing", category: "Validation", domainRole: "qa" },
-
       // HR topics
       { name: "Recruitment Process", category: "Hiring", domainRole: "hr" },
       { name: "Employee Onboarding", category: "Integration", domainRole: "hr" },
@@ -133,13 +156,16 @@ export class MemStorage implements IStorage {
       { name: "Conflict Resolution", category: "Management", domainRole: "hr" },
       { name: "Policy Development", category: "Governance", domainRole: "hr" },
     ];
-
     defaultTopics.forEach(topic => {
       const id = randomUUID();
-      this.topics.set(id, { 
-        id, 
-        ...topic,
-        domainRole: topic.domainRole as "frontend" | "backend" | "devops" | "qa" | "hr"
+      const domainRole: DomainRole = typeof topic.domainRole === 'string' && allowedDomainRoles.includes(topic.domainRole as DomainRole)
+        ? topic.domainRole as DomainRole
+        : "frontend";
+      this.topics.set(id, {
+        id,
+        name: topic.name,
+        category: topic.category,
+        domainRole
       });
     });
   }
@@ -161,18 +187,25 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
+    const allowedDomainRoles: DomainRole[] = ["frontend", "backend", "devops", "qa", "hr"];
+    const allowedRoles = ["manager", "mentor", "buddy"] as const;
     const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
+    const domainRole: DomainRole = allowedDomainRoles.includes(insertUser.domainRole as DomainRole)
+      ? insertUser.domainRole as DomainRole
+      : "frontend";
+    const role = typeof insertUser.role === 'string' && allowedRoles.includes(insertUser.role as any)
+      ? insertUser.role as typeof allowedRoles[number]
+      : "buddy";
+    const user: User = {
+      ...insertUser,
       id,
-      domainRole: insertUser.domainRole || null,
+      role,
+      domainRole,
       avatarUrl: insertUser.avatarUrl || null,
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    console.log(`[MemStorage] Storing user with ID: ${id}`, user);
     this.users.set(id, user);
-    console.log(`[MemStorage] Total users in storage: ${this.users.size}`);
     return user;
   }
 
@@ -237,7 +270,7 @@ export class MemStorage implements IStorage {
       const mentorUser = mentor ? this.users.get(mentor.userId) : null;
       const buddyUser = buddy ? this.users.get(buddy.userId) : null;
 
-      if (mentorUser && buddyUser) {
+      if (mentorUser && buddyUser && isUser(mentorUser) && isUser(buddyUser)) {
         activities.push({
           mentorName: mentorUser.name,
           buddyName: buddyUser.name,
@@ -258,7 +291,7 @@ export class MemStorage implements IStorage {
     // Filter by role
     if (filters.role && filters.role !== 'all') {
       mentors = mentors.filter(mentor => {
-        const user = this.users.get(mentor.userId);
+        const user = this.users.get(mentor.userId) as User | undefined;
         return user?.domainRole === filters.role;
       });
     }
@@ -273,9 +306,13 @@ export class MemStorage implements IStorage {
     if (filters.search) {
       const searchTerm = filters.search.toLowerCase();
       mentors = mentors.filter(mentor => {
-        const user = this.users.get(mentor.userId);
-        return user?.name.toLowerCase().includes(searchTerm) ||
-               mentor.expertise.toLowerCase().includes(searchTerm);
+        const mentorUser = this.users.get(mentor.userId);
+        if (isUser(mentorUser)) {
+          const mUser: User = mentorUser;
+          return ('' + mUser.name).toLowerCase().includes(searchTerm) ||
+                 mentor.expertise?.toLowerCase().includes(searchTerm) || false;
+        }
+        return mentor.expertise?.toLowerCase().includes(searchTerm) || false;
       });
     }
 
@@ -328,8 +365,8 @@ export class MemStorage implements IStorage {
     const mentor: Mentor = {
       ...insertMentor,
       id,
-      responseRate: insertMentor.responseRate || null,
-      isActive: insertMentor.isActive || null,
+      responseRate: insertMentor.responseRate ?? null,
+      isActive: insertMentor.isActive ?? null,
       createdAt: new Date()
     };
     this.mentors.set(id, mentor);
@@ -380,6 +417,50 @@ export class MemStorage implements IStorage {
     });
   }
 
+  async getAllMentors(filters?: { domain?: string; search?: string }): Promise<any[]> {
+    let mentors = Array.from(this.mentors.values());
+    
+    // Filter by domain
+    if (filters?.domain && filters.domain !== 'all') {
+      mentors = mentors.filter(mentor => {
+        const user = this.users.get(mentor.userId) as User | undefined;
+        return user?.domainRole === filters.domain;
+      });
+    }
+    
+    // Filter by search
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      mentors = mentors.filter(mentor => {
+        const mentorUser = this.users.get(mentor.userId);
+        if (isUser(mentorUser)) {
+          const mUser: User = mentorUser;
+          return ('' + mUser.name).toLowerCase().includes(searchTerm) ||
+                 mentor.expertise?.toLowerCase().includes(searchTerm) || false;
+        }
+        return mentor.expertise?.toLowerCase().includes(searchTerm) || false;
+      });
+    }
+
+    // Enrich with user data and stats
+    return mentors.map(mentor => {
+      const user = this.users.get(mentor.userId);
+      const buddiesCount = Array.from(this.buddies.values())
+        .filter(buddy => buddy.assignedMentorId === mentor.id).length;
+      const completedTasks = Array.from(this.tasks.values())
+        .filter(task => task.mentorId === mentor.id && task.status === 'completed').length;
+
+      return {
+        ...mentor,
+        user,
+        stats: {
+          buddiesCount,
+          completedTasks
+        }
+      };
+    });
+  }
+
   // Buddy methods
   async getBuddyById(id: string): Promise<any> {
     const buddy = this.buddies.get(id);
@@ -407,7 +488,7 @@ export class MemStorage implements IStorage {
     // Filter by domain
     if (filters?.domain && filters.domain !== 'all') {
       buddies = buddies.filter(buddy => {
-        const user = this.users.get(buddy.userId);
+        const user = this.users.get(buddy.userId) as User | undefined;
         return user?.domainRole === filters.domain;
       });
     }
@@ -416,9 +497,13 @@ export class MemStorage implements IStorage {
     if (filters?.search) {
       const searchTerm = filters.search.toLowerCase();
       buddies = buddies.filter(buddy => {
-        const user = this.users.get(buddy.userId);
-        return user?.name.toLowerCase().includes(searchTerm) ||
-               user?.email.toLowerCase().includes(searchTerm);
+        const buddyUser = this.users.get(buddy.userId);
+        if (isUser(buddyUser)) {
+          const bUser: User = buddyUser;
+          return ('' + bUser.name).toLowerCase().includes(searchTerm) ||
+                 ('' + bUser.email).toLowerCase().includes(searchTerm);
+        }
+        return false;
       });
     }
 
@@ -444,18 +529,33 @@ export class MemStorage implements IStorage {
   }
 
   async createBuddy(insertBuddy: InsertBuddy): Promise<Buddy> {
+    const allowedStatus = ["active", "inactive", "exited"] as const;
     const id = randomUUID();
+    const status = allowedStatus.includes(insertBuddy.status as any)
+      ? insertBuddy.status as typeof allowedStatus[number]
+      : "active";
     const buddy: Buddy = {
       ...insertBuddy,
       id,
       assignedMentorId: insertBuddy.assignedMentorId || null,
-      status: insertBuddy.status || null,
-      progress: insertBuddy.progress || null,
-      joinDate: insertBuddy.joinDate || new Date(),
+      status,
+      progress: insertBuddy.progress ?? null,
+      joinDate: insertBuddy.joinDate ?? new Date(),
       createdAt: new Date()
     };
     this.buddies.set(id, buddy);
     return buddy;
+  }
+
+  async updateBuddy(id: string, updates: Partial<Buddy>): Promise<Buddy> {
+    const buddy = this.buddies.get(id);
+    if (!buddy) {
+      throw new Error('Buddy not found');
+    }
+    
+    const updatedBuddy = { ...buddy, ...updates, updatedAt: new Date() };
+    this.buddies.set(id, updatedBuddy);
+    return updatedBuddy;
   }
 
   async getBuddyTasks(buddyId: string): Promise<any[]> {
@@ -565,12 +665,16 @@ export class MemStorage implements IStorage {
 
   // Task methods
   async createTask(insertTask: InsertTask): Promise<Task> {
+    const allowedStatus = ["pending", "in_progress", "completed", "overdue"] as const;
     const id = randomUUID();
+    const status = allowedStatus.includes(insertTask.status as any)
+      ? insertTask.status as typeof allowedStatus[number]
+      : "pending";
     const task: Task = {
       ...insertTask,
       id,
-      dueDate: insertTask.dueDate || null,
-      status: insertTask.status || null,
+      dueDate: insertTask.dueDate ?? null,
+      status,
       createdAt: new Date()
     };
     this.tasks.set(id, task);
@@ -647,6 +751,21 @@ export class MemStorage implements IStorage {
     return submission;
   }
 
+  async getSubmissionsByTaskId(taskId: string): Promise<any[]> {
+    const submissions = Array.from(this.submissions.values())
+      .filter(submission => submission.taskId === taskId);
+    
+    return submissions.map(submission => {
+      const buddy = this.buddies.get(submission.buddyId);
+      const buddyUser = buddy ? this.users.get(buddy.userId) : null;
+      
+      return {
+        ...submission,
+        buddy: buddy ? { ...buddy, user: buddyUser } : null
+      };
+    });
+  }
+
   // Topic methods
   async getTopics(domainRole?: string): Promise<Topic[]> {
     let topics = Array.from(this.topics.values());
@@ -658,11 +777,38 @@ export class MemStorage implements IStorage {
     return topics;
   }
 
+  async getAllTopics(): Promise<Topic[]> {
+    return Array.from(this.topics.values());
+  }
+
+  async getTopicById(id: string): Promise<Topic | undefined> {
+    return this.topics.get(id);
+  }
+
   async createTopic(insertTopic: InsertTopic): Promise<Topic> {
+    const allowedDomainRoles: DomainRole[] = ["frontend", "backend", "devops", "qa", "hr"];
     const id = randomUUID();
-    const topic: Topic = { ...insertTopic, id };
+    const domainRole: DomainRole = typeof insertTopic.domainRole === 'string' && allowedDomainRoles.includes(insertTopic.domainRole as DomainRole)
+      ? insertTopic.domainRole as DomainRole
+      : "frontend";
+    const topic: Topic = { ...insertTopic, id, domainRole };
     this.topics.set(id, topic);
     return topic;
+  }
+
+  async updateTopic(id: string, updates: Partial<Topic>): Promise<Topic> {
+    const topic = this.topics.get(id);
+    if (!topic) {
+      throw new Error('Topic not found');
+    }
+    
+    const updatedTopic = { ...topic, ...updates };
+    this.topics.set(id, updatedTopic);
+    return updatedTopic;
+  }
+
+  async deleteTopic(id: string): Promise<void> {
+    this.topics.delete(id);
   }
 
   // Progress tracking methods
@@ -671,8 +817,8 @@ export class MemStorage implements IStorage {
     const progress: BuddyTopicProgress = { 
       ...insertProgress, 
       id,
-      checked: insertProgress.checked || null,
-      completedAt: insertProgress.completedAt || null
+      checked: insertProgress.checked ?? null,
+      completedAt: insertProgress.completedAt ?? null
     };
     this.buddyTopicProgress.set(id, progress);
     return progress;
@@ -743,14 +889,144 @@ export class MemStorage implements IStorage {
     const newResource = {
       ...resource,
       id,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
       isBookmarked: false
     };
+    this.resources.set(id, newResource);
     return newResource;
+  }
+
+  async getResourceById(id: string): Promise<any | undefined> {
+    return this.resources.get(id);
+  }
+
+  async updateResource(id: string, updates: any): Promise<any> {
+    const resource = this.resources.get(id);
+    if (!resource) {
+      throw new Error('Resource not found');
+    }
+    const updatedResource = { ...resource, ...updates, updatedAt: new Date() };
+    this.resources.set(id, updatedResource);
+    return updatedResource;
+  }
+
+  async deleteResource(id: string): Promise<void> {
+    if (!this.resources.has(id)) {
+      throw new Error('Resource not found');
+    }
+    this.resources.delete(id);
+  }
+
+  private initializeDefaultCurriculum() {
+    // Add some default curriculum items for demonstration
+    const defaultCurriculum: Curriculum[] = [
+      {
+        id: randomUUID(),
+        title: 'React Fundamentals',
+        description: 'Learn the basics of React including components, props, and state',
+        domain: 'frontend',
+        createdBy: 'user-1', // This would be a real user ID in production
+        content: 'This curriculum covers the fundamental concepts of React...',
+        attachments: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        id: randomUUID(),
+        title: 'Node.js Basics',
+        description: 'Introduction to server-side JavaScript with Node.js',
+        domain: 'backend',
+        createdBy: 'user-1',
+        content: 'This curriculum introduces Node.js and its core modules...',
+        attachments: null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    // Add to map
+    for (const item of defaultCurriculum) {
+      this.curriculum.set(item.id, item);
+    }
+  }
+
+  async getAllCurriculum(filters?: { domain?: string; search?: string }): Promise<Curriculum[]> {
+    let curriculumItems = Array.from(this.curriculum.values());
+
+    // Apply filters
+    if (filters?.domain && filters.domain !== 'all') {
+      curriculumItems = curriculumItems.filter(item => item.domain === filters.domain);
+    }
+
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      curriculumItems = curriculumItems.filter(item =>
+        item.title.toLowerCase().includes(searchTerm) ||
+        item.description.toLowerCase().includes(searchTerm)
+      );
+    }
+
+    return curriculumItems;
+  }
+
+  async getCurriculumById(id: string): Promise<Curriculum | undefined> {
+    return this.curriculum.get(id);
+  }
+
+  async createCurriculum(curriculum: InsertCurriculum): Promise<Curriculum> {
+    const allowedDomains: DomainRole[] = ["frontend", "backend", "devops", "qa", "hr"];
+    const id = randomUUID();
+    const now = new Date();
+    const domain: DomainRole = allowedDomains.includes(curriculum.domain as DomainRole)
+      ? curriculum.domain as DomainRole
+      : "frontend";
+    const newCurriculum: Curriculum = {
+      ...curriculum,
+      id,
+      domain,
+      attachments: curriculum.attachments !== undefined ? curriculum.attachments : null,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.curriculum.set(id, newCurriculum);
+    return newCurriculum;
+  }
+
+  async updateCurriculum(id: string, updates: Partial<Curriculum>): Promise<Curriculum> {
+    const allowedDomains: DomainRole[] = ["frontend", "backend", "devops", "qa", "hr"];
+    const existing = this.curriculum.get(id);
+    if (!existing) {
+      throw new Error(`Curriculum with ID ${id} not found`);
+    }
+    let domain: DomainRole = existing.domain;
+    if (updates.domain && allowedDomains.includes(updates.domain as DomainRole)) {
+      domain = updates.domain as DomainRole;
+    }
+    const updated: Curriculum = {
+      ...existing,
+      ...updates,
+      domain,
+      attachments: updates.attachments !== undefined ? updates.attachments : (existing.attachments !== undefined ? existing.attachments : null),
+      updatedAt: new Date()
+    };
+    this.curriculum.set(id, updated);
+    return updated;
+  }
+
+  async deleteCurriculum(id: string): Promise<void> {
+    if (!this.curriculum.has(id)) {
+      throw new Error(`Curriculum with ID ${id} not found`);
+    }
+    
+    this.curriculum.delete(id);
   }
 }
 
 import { DbStorage } from './db-storage';
+
+// Type guard for User
+function isUser(obj: any): obj is User {
+  return obj && typeof obj === 'object' && typeof obj.name === 'string' && typeof obj.email === 'string';
+}
 
 // Initialize storage with database connection
 async function initializeStorage(): Promise<IStorage> {
@@ -785,7 +1061,7 @@ async function initializeStorage(): Promise<IStorage> {
     });
     
     await memStorage.createMentor({
-      userId: testUser.id,
+      userId: String(testUser.id),
       expertise: 'Experienced frontend developer with React, TypeScript, JavaScript',
       experience: '5+ years in frontend development',
       responseRate: 95,
@@ -794,7 +1070,7 @@ async function initializeStorage(): Promise<IStorage> {
 
     // Create some buddies with sample data
     const buddy1 = await memStorage.createBuddy({
-      userId: testUser.id, // Same user for demo
+      userId: String(testUser.id), // Same user for demo
       status: 'active'
     });
 
@@ -811,7 +1087,7 @@ async function initializeStorage(): Promise<IStorage> {
       await memStorage.createTopic({
         name: topic.name,
         category: topic.category,
-        domainRole: topic.domainRole as "frontend" | "backend" | "devops" | "qa" | "hr"
+        domainRole: topic.domainRole as DomainRole
       });
     }
 
@@ -819,8 +1095,8 @@ async function initializeStorage(): Promise<IStorage> {
     await memStorage.createTask({
       title: 'Build a Todo App',
       description: 'Create a simple todo application using React with add, edit, and delete functionality.',
-      mentorId: testUser.id, // Use the mentor ID
-      buddyId: buddy1.id,
+      mentorId: String(testUser.id), // Use the mentor ID
+      buddyId: String(buddy1.id),
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
       status: 'pending'
     });
@@ -828,8 +1104,8 @@ async function initializeStorage(): Promise<IStorage> {
     await memStorage.createTask({
       title: 'Learn CSS Flexbox',
       description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
-      mentorId: testUser.id, // Use the mentor ID
-      buddyId: buddy1.id,
+      mentorId: String(testUser.id), // Use the mentor ID
+      buddyId: String(buddy1.id),
       dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
       status: 'in_progress'
     });
@@ -874,7 +1150,7 @@ async function seedDatabaseData(dbStorage: DbStorage) {
 
     // Create mentor profile
     const mentor = await dbStorage.createMentor({
-      userId: testUser.id,
+      userId: String(testUser.id),
       expertise: 'Experienced frontend developer with React, TypeScript, JavaScript',
       experience: '5+ years in frontend development',
       responseRate: 95,
@@ -891,8 +1167,8 @@ async function seedDatabaseData(dbStorage: DbStorage) {
 
     // Create buddy profile
     const buddy = await dbStorage.createBuddy({
-      userId: buddyUser.id,
-      assignedMentorId: mentor.id,
+      userId: String(buddyUser.id),
+      assignedMentorId: String(mentor.id),
       status: 'active'
     });
 
@@ -909,7 +1185,7 @@ async function seedDatabaseData(dbStorage: DbStorage) {
       await dbStorage.createTopic({
         name: topic.name,
         category: topic.category,
-        domainRole: topic.domainRole as "frontend" | "backend" | "devops" | "qa" | "hr"
+        domainRole: topic.domainRole as DomainRole
       });
     }
 
@@ -917,8 +1193,8 @@ async function seedDatabaseData(dbStorage: DbStorage) {
     await dbStorage.createTask({
       title: 'Build a Todo App',
       description: 'Create a simple todo application using React with add, edit, and delete functionality.',
-      mentorId: mentor.id,
-      buddyId: buddy.id,
+      mentorId: String(mentor.id),
+      buddyId: String(buddy.id),
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: 'pending'
     });
@@ -926,8 +1202,8 @@ async function seedDatabaseData(dbStorage: DbStorage) {
     await dbStorage.createTask({
       title: 'Learn CSS Flexbox',
       description: 'Complete exercises on CSS Flexbox layout and create a responsive navigation bar.',
-      mentorId: mentor.id,
-      buddyId: buddy.id,
+      mentorId: String(mentor.id),
+      buddyId: String(buddy.id),
       dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       status: 'in_progress'
     });

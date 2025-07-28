@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase, AuthUser } from '@/lib/supabase';
+import type { DomainRole } from '../types';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -37,18 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Set default demo user for direct access
-    const demoUser = {
-      "email": "demo@mentorpanel.com",
-      "name": "Demo Manager", 
-      "role": "manager",
-      "domainRole": "frontend",
-      "id": "demo-user-id",
-      "avatarUrl": null,
-      "createdAt": new Date().toISOString(),
-      "updatedAt": new Date().toISOString()
+    const demoUser: AuthUser = {
+      email: 'demo@example.com',
+      name: 'Demo User',
+      role: 'mentor',
+      domainRole: 'frontend' as DomainRole,
+      id: 'demo-id',
+      avatarUrl: null,
     };
-    
-    localStorage.setItem('user_profile', JSON.stringify(demoUser));
     setUser(demoUser);
     setLoading(false);
 

@@ -9,9 +9,12 @@
   "devDependencies": {
     "@types/node": "^24.1.0",
     "concurrently": "^8.2.0",
+    "typescript": "^5.8.3",
     "vite": "^7.0.6"
   },
   "dependencies": {
-    "@radix-ui/react-tooltip": "^1.2.7"
+    "@radix-ui/react-tooltip": "^1.2.7",
+    "@types/cors": "^2.8.19",
+    "cors": "^2.8.5"
   }
 }

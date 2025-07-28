@@ -2,13 +2,17 @@ import { sql } from "drizzle-orm";
 import { pgTable, text, varchar, timestamp, integer, boolean, uuid, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { curriculum, insertCurriculumSchema } from "./curriculum-schema";
+
+// Clean union type for domain roles
+export type DomainRole = 'frontend' | 'backend' | 'devops' | 'qa' | 'hr';
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   role: text("role", { enum: ["manager", "mentor", "buddy"] }).notNull(),
-  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }),
+  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }) as unknown as DomainRole,
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -60,7 +64,7 @@ export const topics = pgTable("topics", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   category: text("category").notNull(),
-  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }).notNull(),
+  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }).notNull() as unknown as DomainRole,
 });
 
 export const buddyTopicProgress = pgTable("buddy_topic_progress", {
@@ -128,8 +132,8 @@ export const insertResourceSchema = createInsertSchema(resources).omit({
 });
 
 // Types
-export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = Omit<typeof users.$inferSelect, 'domainRole'> & { domainRole: DomainRole };
+export type InsertUser = z.infer<typeof insertUserSchema> & { domainRole: DomainRole };
 export type Mentor = typeof mentors.$inferSelect;
 export type InsertMentor = z.infer<typeof insertMentorSchema>;
 export type Buddy = typeof buddies.$inferSelect;
@@ -138,9 +142,12 @@ export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 export type Submission = typeof submissions.$inferSelect;
 export type InsertSubmission = z.infer<typeof insertSubmissionSchema>;
-export type Topic = typeof topics.$inferSelect;
-export type InsertTopic = z.infer<typeof insertTopicSchema>;
+export type Topic = Omit<typeof topics.$inferSelect, 'domainRole'> & { domainRole: DomainRole };
+export type InsertTopic = z.infer<typeof insertTopicSchema> & { domainRole: DomainRole };
 export type BuddyTopicProgress = typeof buddyTopicProgress.$inferSelect;
 export type InsertBuddyTopicProgress = z.infer<typeof insertBuddyTopicProgressSchema>;
 export type Resource = typeof resources.$inferSelect;
 export type InsertResource = z.infer<typeof insertResourceSchema>;
+// Re-export curriculum types
+export { curriculum } from './curriculum-schema';
+export type { Curriculum, InsertCurriculum } from './curriculum-schema';

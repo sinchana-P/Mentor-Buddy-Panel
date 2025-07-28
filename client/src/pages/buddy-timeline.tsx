@@ -12,28 +12,29 @@ import WorkPortfolio from '@/components/WorkPortfolio';
 import LoadingSpinner from '@/components/ui/loading-spinner';
 import { ArrowLeft, Plus, Edit } from 'lucide-react';
 import { useLocation } from 'wouter';
+import { PortfolioItem, Task } from '@/types';
 
 export default function BuddyTimelinePage() {
   const [, params] = useRoute('/buddies/:id');
   const [, setLocation] = useLocation();
   const buddyId = params?.id;
 
-  const { data: buddy = null, isLoading: buddyLoading } = useQuery({
+  const { data: buddy = null as any, isLoading: buddyLoading } = useQuery({
     queryKey: ['/api/buddies', buddyId],
     enabled: !!buddyId,
   });
 
-  const { data: tasks = [], isLoading: tasksLoading } = useQuery({
+  const { data: tasks = [] as any[], isLoading: tasksLoading } = useQuery({
     queryKey: ['/api/buddies', buddyId, 'tasks'],
     enabled: !!buddyId,
   });
 
-  const { data: progress = { topics: [], percentage: 0 } } = useQuery({
+  const { data: progress = { topics: [] as any[], percentage: 0 } as any } = useQuery({
     queryKey: ['/api/buddies', buddyId, 'progress'],
     enabled: !!buddyId,
   });
 
-  const { data: portfolio = [] } = useQuery({
+  const { data: portfolio = [] as any[] } = useQuery({
     queryKey: ['/api/buddies', buddyId, 'portfolio'],
     enabled: !!buddyId,
   });
@@ -126,7 +127,7 @@ export default function BuddyTimelinePage() {
                     <LoadingSpinner />
                   </div>
                 ) : (
-                  <TaskTimeline tasks={tasks || []} buddy={buddy} />
+                  <TaskTimeline tasks={tasks as any || []} buddy={buddy} />
                 )}
               </CardContent>
             </Card>
@@ -141,7 +142,7 @@ export default function BuddyTimelinePage() {
             />
 
             {/* Work Portfolio */}
-            <WorkPortfolio portfolio={portfolio || []} />
+            <WorkPortfolio portfolio={portfolio as PortfolioItem[]|| []} />
           </div>
         </div>
       </motion.div>

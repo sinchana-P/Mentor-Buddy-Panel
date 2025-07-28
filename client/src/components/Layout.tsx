@@ -10,6 +10,7 @@ import {
   UserCheck, 
   ClipboardList, 
   BookOpen,
+  GraduationCap,
   Settings,
   LogOut,
   Menu,
@@ -24,12 +25,13 @@ const navigation = [
   { name: 'Buddies', href: '/buddies', icon: UserCheck },
   { name: 'Tasks', href: '/tasks', icon: ClipboardList },
   { name: 'Resources', href: '/resources', icon: BookOpen },
+  { name: 'Curriculum', href: '/curriculum', icon: GraduationCap },
 ];
 
 interface LayoutProps {
-  children: React.ReactNode;
-  theme: string;
-  setTheme: (theme: string) => void;
+  children?: React.ReactNode;
+  theme?: string;
+  setTheme?: (theme: string) => void;
 }
 
 export default function Layout({ children, theme, setTheme }: LayoutProps) {
@@ -148,7 +150,7 @@ export default function Layout({ children, theme, setTheme }: LayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar for all screens */}
-        <TopBar theme={theme} setTheme={setTheme} />
+        <TopBar theme={theme || 'dark'} setTheme={setTheme || (() => {})} />
         {/* Page content */}
         <main className="flex-1 overflow-auto">
           {children}

@@ -25,12 +25,12 @@ export default function MentorProfilePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
 
-  const { data: mentor = null, isLoading: mentorLoading } = useQuery({
+  const { data: mentor = null as any, isLoading: mentorLoading } = useQuery({
     queryKey: ['/api/mentors', mentorId],
     enabled: !!mentorId,
   });
 
-  const { data: assignedBuddies = [], isLoading: buddiesLoading } = useQuery({
+  const { data: assignedBuddies = [] as any[], isLoading: buddiesLoading } = useQuery({
     queryKey: ['/api/mentors', mentorId, 'buddies', statusFilter],
     enabled: !!mentorId,
   });

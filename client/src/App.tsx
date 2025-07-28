@@ -19,6 +19,8 @@ import TasksPage from "@/pages/tasks";
 import SettingsPage from "@/pages/settings";
 import AnalyticsPage from "@/pages/analytics";
 import ResourcesPage from "@/pages/resources";
+import CurriculumPage from "@/pages/curriculum";
+import CurriculumDetailsPage from "@/pages/curriculum-details";
 import NotFound from "@/pages/not-found";
 
 interface AppProps {
@@ -134,6 +136,36 @@ function Router({ theme, setTheme }: AppProps) {
                 transition={{ duration: 0.3 }}
               >
                 <ResourcesPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/curriculum" component={() => (
+          <ProtectedRoute>
+            <Layout theme={theme} setTheme={setTheme}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CurriculumPage />
+              </motion.div>
+            </Layout>
+          </ProtectedRoute>
+        )} />
+
+        <Route path="/curriculum/:id" component={() => (
+          <ProtectedRoute>
+            <Layout theme={theme} setTheme={setTheme}>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CurriculumDetailsPage />
               </motion.div>
             </Layout>
           </ProtectedRoute>

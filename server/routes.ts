@@ -10,6 +10,7 @@ import {
   insertTopicSchema,
   insertBuddyTopicProgressSchema
 } from "server/shared/schema";
+import { insertCurriculumSchema } from "server/shared/curriculum-schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -46,7 +47,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log('[POST /api/users] Creating user with data:', req.body);
       const userData = insertUserSchema.parse(req.body);
-      const user = await storage.createUser(userData);
+      const user = await storage.createUser(userData as any);
       console.log('[POST /api/users] User created successfully:', user);
       res.status(201).json(user);
     } catch (error: any) {
@@ -135,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create buddy profile
       const buddy = await storage.createBuddy({
-        userId: user.id,
+        userId: user.id as string,
         status: 'active'
       });
       
@@ -184,15 +185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/buddies/:id/progress/:topicId", async (req, res) => {
-    try {
-      const { checked } = req.body;
-      const progress = await storage.updateBuddyTopicProgress(req.params.id, req.params.topicId, checked);
-      res.json(progress);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Route moved to buddyRoutes.ts
 
   app.get("/api/buddies/:id/portfolio", async (req, res) => {
     try {
@@ -293,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/topics", async (req, res) => {
     try {
       const topicData = insertTopicSchema.parse(req.body);
-      const topic = await storage.createTopic(topicData);
+      const topic = await storage.createTopic(topicData as any);
       res.status(201).json(topic);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -303,34 +296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Resources routes
-  app.get("/api/resources", async (req, res) => {
-    try {
-      const { category, difficulty, type, search } = req.query;
-      const resources = await storage.getAllResources({
-        category: category as string,
-        difficulty: difficulty as string,
-        type: type as string,
-        search: search as string
-      });
-      res.json(resources);
-    } catch (error) {
-      console.error('Error fetching resources:', error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.post("/api/resources", async (req, res) => {
-    try {
-      console.log('[POST /api/resources] Creating new resource:', req.body);
-      const resource = await storage.createResource(req.body);
-      console.log('[POST /api/resources] Resource created:', resource.id);
-      res.status(201).json(resource);
-    } catch (error) {
-      console.error('Error creating resource:', error);
-      res.status(500).json({ message: 'Failed to create resource' });
-    }
-  });
+  // Resources routes are now handled by resourceRoutes.ts
 
   // Mentor routes
   app.get("/api/mentors", async (req, res) => {
@@ -397,6 +363,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Curriculum routes
+  app.get("/api/curriculum", async (req, res) => {
+    try {
+      const { domain, search } = req.query;
+      const curriculumItems = await storage.getAllCurriculum({
+        domain: domain as string,
+        search: search as string
+      });
+      res.json(curriculumItems);
+    } catch (error) {
+      console.error('Error fetching curriculum:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/curriculum/:id", async (req, res) => {
+    try {
+      const curriculumItem = await storage.getCurriculumById(req.params.id);
+      if (!curriculumItem) {
+        return res.status(404).json({ message: "Curriculum item not found" });
+      }
+      res.json(curriculumItem);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/curriculum", async (req, res) => {
+    try {
+      console.log('[POST /api/curriculum] Creating new curriculum item:', req.body);
+      const curriculumData = insertCurriculumSchema.parse(req.body);
+      const curriculumItem = await storage.createCurriculum(curriculumData);
+      console.log('[POST /api/curriculum] Curriculum item created:', curriculumItem.id);
+      res.status(201).json(curriculumItem);
+    } catch (error) {
+      console.error('Error creating curriculum item:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid curriculum data", errors: error.issues });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.patch("/api/curriculum/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      const curriculumItem = await storage.updateCurriculum(req.params.id, updates);
+      res.json(curriculumItem);
+    } catch (error) {
+      console.error('Error updating curriculum item:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/curriculum/:id", async (req, res) => {
+    try {
+      await storage.deleteCurriculum(req.params.id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting curriculum item:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Buddy routes
   app.get("/api/buddies/:id", async (req, res) => {
     try {
@@ -428,19 +458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/buddies/:buddyId/progress/:topicId", async (req, res) => {
-    try {
-      const { checked } = req.body;
-      const progress = await storage.updateBuddyTopicProgress(
-        req.params.buddyId,
-        req.params.topicId,
-        checked
-      );
-      res.json(progress);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Route moved to buddyRoutes.ts
 
   app.get("/api/buddies/:id/portfolio", async (req, res) => {
     try {

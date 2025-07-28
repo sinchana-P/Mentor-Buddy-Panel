@@ -13,7 +13,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { data: stats = {} } = useQuery({
+  const { data: stats = {} as any } = useQuery({
     queryKey: ['/api/dashboard/stats'],
     enabled: !!user,
   });
