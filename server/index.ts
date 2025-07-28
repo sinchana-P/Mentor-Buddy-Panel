@@ -1,6 +1,5 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { createServer } from "http";
 
 import { registerRoutes } from "./routes";
 import { serveStatic, log } from "./vite";

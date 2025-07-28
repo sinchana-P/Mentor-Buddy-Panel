@@ -91,7 +91,7 @@ NODE_ENV=development
 PORT=3000
 HOST=localhost
 SESSION_SECRET=your-session-secret
-CORS_ORIGIN=http://localhost:5175
+CORS_ORIGIN=http://localhost:5173
 VITE_API_URL=http://localhost:3000
 ```
 
