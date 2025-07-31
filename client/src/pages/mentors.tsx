@@ -3,15 +3,13 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import MentorCard from '@/components/MentorCard';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, UserCheck, Filter, Star, Sparkles, Crown, Users } from 'lucide-react';
 import { useGetMentorsQuery, useCreateMentorMutation } from '@/api/mentorsApi';
 import { useToast } from '@/hooks/use-toast';
 
@@ -85,28 +83,50 @@ export default function MentorsPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="space-y-8"
       >
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
-          <div>
-            <h1 className="text-2xl font-bold">Mentors</h1>
-            <p className="text-muted-foreground">Manage mentor profiles and assignments</p>
-          </div>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Mentor
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px]">
+        {/* Premium Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="premium-card glass-card mb-8"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gradient">Mentors</h1>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <p className="text-foreground-secondary">Premium mentor management system</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <button className="btn-gradient hover-lift flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Add Mentor
+                </button>
+              </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px] premium-card border-white/10">
               <DialogHeader>
-                <DialogTitle>Add New Mentor</DialogTitle>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+                    <UserCheck className="w-4 h-4 text-white" />
+                  </div>
+                  <DialogTitle className="text-xl font-bold text-premium">Add New Mentor</DialogTitle>
+                </div>
               </DialogHeader>
               <Form {...mentorForm}>
                 <form onSubmit={mentorForm.handleSubmit(onSubmit)} className="space-y-4">
@@ -192,17 +212,17 @@ export default function MentorsPage() {
                       </FormItem>
                     )}
                   />
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
+                  <div className="flex justify-end space-x-3 pt-6">
+                    <button 
                       type="button" 
-                      variant="outline" 
+                      className="px-6 py-2.5 rounded-lg border border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-300 text-white/80 hover:text-white"
                       onClick={() => setIsCreateDialogOpen(false)}
                     >
                       Cancel
-                    </Button>
-                    <Button type="submit" disabled={false}>Create Mentor
-                      {/* {createMentorMutation.isPending ? "Creating..." : "Create Mentor"} */}
-                    </Button>
+                    </button>
+                    <button type="submit" className="btn-gradient" disabled={false}>
+                      Create Mentor
+                    </button>
                   </div>
                 </form>
               </Form>
@@ -210,67 +230,108 @@ export default function MentorsPage() {
           </Dialog>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search mentors..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Select value={filters.role} onValueChange={(value) => handleFilterChange('role', value)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="frontend">Frontend</SelectItem>
-                  <SelectItem value="backend">Backend</SelectItem>
-                  <SelectItem value="devops">DevOps</SelectItem>
-                  <SelectItem value="qa">QA</SelectItem>
-                  <SelectItem value="hr">HR</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Premium Filters */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          className="premium-card mb-8"
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 gradient-accent rounded-lg flex items-center justify-center">
+              <Filter className="w-4 h-4 text-white" />
             </div>
-          </CardContent>
-        </Card>
+            <h2 className="text-lg font-semibold text-premium">Filter & Search</h2>
+          </div>
+          <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-white/40" />
+              <input
+                className="input-premium pl-10 w-full"
+                placeholder="Search mentors by name, expertise, or domain..."
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+              />
+            </div>
+            <Select value={filters.role} onValueChange={(value) => handleFilterChange('role', value)}>
+              <SelectTrigger className="w-[180px] input-premium">
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent className="premium-card border-white/10">
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="frontend">Frontend</SelectItem>
+                <SelectItem value="backend">Backend</SelectItem>
+                <SelectItem value="devops">DevOps</SelectItem>
+                <SelectItem value="qa">QA</SelectItem>
+                <SelectItem value="hr">HR</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
+              <SelectTrigger className="w-[180px] input-premium">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent className="premium-card border-white/10">
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </motion.div>
 
-        {/* Mentors Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {mentors && mentors.length > 0 ? mentors.map((mentor: any, index: number) => (
-            <motion.div
-              key={mentor.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.1 }}
-            >
-              <MentorCard mentor={mentor} />
-            </motion.div>
-          )) : (
-            <div className="col-span-full text-center py-12">
-              <div className="text-muted-foreground">
-                <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No mentors found matching your criteria</p>
-              </div>
+        {/* Premium Mentors Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 gradient-success rounded-lg flex items-center justify-center">
+              <Users className="w-4 h-4 text-white" />
             </div>
-          )}
-        </div>
+            <h2 className="text-lg font-semibold text-premium">Available Mentors</h2>
+            <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-lg">
+              <Star className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm font-medium text-white">{mentors?.length || 0} Total</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {mentors && mentors.length > 0 ? mentors.map((mentor: any, index: number) => (
+              <motion.div
+                key={mentor.id}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ 
+                  duration: 0.5, 
+                  delay: index * 0.1,
+                  type: "spring",
+                  bounce: 0.3
+                }}
+                className="hover-lift"
+              >
+                <MentorCard mentor={mentor} />
+              </motion.div>
+            )) : (
+              <div className="col-span-full">
+                <div className="premium-card text-center py-16">
+                  <div className="w-16 h-16 gradient-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-premium mb-2">No mentors found</h3>
+                  <p className="text-foreground-secondary mb-6">No mentors match your current search criteria</p>
+                  <button 
+                    className="btn-gradient"
+                    onClick={() => setFilters({ role: 'all', status: 'all', search: '' })}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
       </motion.div>
     </div>
-  );
-}
+)}
