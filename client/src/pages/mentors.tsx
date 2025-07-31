@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Textarea } from '@/components/ui/textarea';
 import MentorCard from '@/components/MentorCard';
 import { Plus, Search } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
+import { useGetMentorsQuery, useCreateMentorMutation } from '@/api/mentorsApi';
 import { useToast } from '@/hooks/use-toast';
 
 const mentorFormSchema = z.object({
@@ -31,7 +30,6 @@ export default function MentorsPage() {
     search: '',
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const mentorForm = useForm<z.infer<typeof mentorFormSchema>>({
@@ -45,38 +43,37 @@ export default function MentorsPage() {
     }
   });
 
-  const { data: mentors = [] as any[], isLoading } = useQuery({
-    queryKey: ['/api/mentors', filters],
+  const { data: mentors = [], isLoading } = useGetMentorsQuery({
+    domain: filters.role !== 'all' ? filters.role : undefined,
+    search: filters.search || undefined,
   });
 
-  const createMentorMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiRequest('POST', '/api/mentors', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/dashboard/stats'] });
+  const [createMentor] = useCreateMentorMutation();
+
+  const handleCreateMentor = async (data: z.infer<typeof mentorFormSchema>) => {
+    try {
+      await createMentor(data as any).unwrap();
       setIsCreateDialogOpen(false);
       mentorForm.reset();
       toast({
         title: "Success",
         description: "Mentor created successfully",
       });
-    },
-    onError: (error: any) => {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to create mentor",
+        description: error?.data?.message || "Failed to create mentor",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
   const onSubmit = (data: z.infer<typeof mentorFormSchema>) => {
-    createMentorMutation.mutate(data);
+    handleCreateMentor(data);
   };
 
   if (isLoading) {
@@ -203,8 +200,8 @@ export default function MentorsPage() {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" disabled={createMentorMutation.isPending}>
-                      {createMentorMutation.isPending ? "Creating..." : "Create Mentor"}
+                    <Button type="submit" disabled={false}>Create Mentor
+                      {/* {createMentorMutation.isPending ? "Creating..." : "Create Mentor"} */}
                     </Button>
                   </div>
                 </form>

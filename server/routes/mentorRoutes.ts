@@ -25,6 +25,9 @@ router.post('/', createMentor);
 // PUT /api/mentors/:id - Update a mentor
 router.put('/:id', updateMentor);
 
+// PATCH /api/mentors/:id - Update a mentor (alternative method)
+router.patch('/:id', updateMentor);
+
 // DELETE /api/mentors/:id - Delete a mentor
 router.delete('/:id', deleteMentor);
 

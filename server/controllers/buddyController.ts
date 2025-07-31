@@ -47,7 +47,7 @@ export const createBuddy = async (req: Request, res: Response) => {
     
     // Create buddy profile
     const buddy = await storage.createBuddy({
-      userId: user.id,
+      userId: user.id as string,
       status: 'active'
     });
     

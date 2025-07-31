@@ -109,6 +109,10 @@ export class DbStorage implements IStorage {
     return result[0] as User;
   }
 
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   // Dashboard
   async getDashboardStats(): Promise<any> {
     const [mentorResults, buddyResults, taskResults] = await Promise.all([

@@ -199,10 +199,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/buddies/:id/assign", async (req, res) => {
     try {
       const { mentorId } = req.body;
+      
+      if (!mentorId) {
+        return res.status(400).json({ message: "Mentor ID is required" });
+      }
+      
+      // Validate buddy exists
+      const existingBuddy = await storage.getBuddyById(req.params.id);
+      if (!existingBuddy) {
+        return res.status(404).json({ message: "Buddy not found" });
+      }
+      
+      // Validate mentor exists
+      const mentor = await storage.getMentorById(mentorId);
+      if (!mentor) {
+        return res.status(404).json({ message: "Mentor not found" });
+      }
+      
       const buddy = await storage.assignBuddyToMentor(req.params.id, mentorId);
       res.json(buddy);
     } catch (error) {
       console.error('Error assigning buddy to mentor:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Buddy PATCH (update)
+  app.patch("/api/buddies/:id", async (req, res) => {
+    try {
+      const updates = req.body;
+      // Validate that the buddy exists first
+      const existingBuddy = await storage.getBuddyById(req.params.id);
+      if (!existingBuddy) {
+        return res.status(404).json({ message: "Buddy not found" });
+      }
+      
+      const buddy = await storage.updateBuddy(req.params.id, updates);
+      res.json(buddy);
+    } catch (error) {
+      console.error('Error updating buddy:', error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -226,22 +261,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/tasks", async (req, res) => {
     try {
       console.log('[POST /api/tasks] Creating new task:', req.body);
-      const { title, description, buddyId, dueDate } = req.body;
-      
-      const task = await storage.createTask({
-        mentorId: "mentor-1", // This would be dynamic based on authenticated user
-        buddyId,
-        title,
-        description,
-        status: 'pending',
-        dueDate: dueDate ? new Date(dueDate) : null
-      });
-      
+      const taskData = insertTaskSchema.parse(req.body);
+      const task = await storage.createTask(taskData);
       console.log('[POST /api/tasks] Task created:', task.id);
-      
-      res.json(task);
+      res.status(201).json(task);
     } catch (error) {
       console.error('Error creating task:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid task data", errors: error.issues });
+      }
       res.status(500).json({ message: 'Failed to create task' });
     }
   });
@@ -298,70 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Resources routes are now handled by resourceRoutes.ts
 
-  // Mentor routes
-  app.get("/api/mentors", async (req, res) => {
-    console.log('[GET /api/mentors] Fetching all mentors...');
-    try {
-      const { role, status, search } = req.query;
-      const mentors = await storage.getMentors({
-        role: role as string,
-        status: status as string,
-        search: search as string,
-      });
-      res.json(mentors);
-    } catch (error: any) {
-      res.status(500).json({
-        message: "Internal server error",
-        error: error?.message ?? error,
-      });
-    }
-  });
-
-  app.get("/api/mentors/:id", async (req, res) => {
-    try {
-      const mentor = await storage.getMentorById(req.params.id);
-      if (!mentor) {
-        return res.status(404).json({ message: "Mentor not found" });
-      }
-      res.json(mentor);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.post("/api/mentors", async (req, res) => {
-    try {
-      const mentorData = insertMentorSchema.parse(req.body);
-      const mentor = await storage.createMentor(mentorData);
-      res.status(201).json(mentor);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid mentor data", errors: error.issues });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.patch("/api/mentors/:id", async (req, res) => {
-    try {
-      const updates = req.body;
-      const mentor = await storage.updateMentor(req.params.id, updates);
-      res.json(mentor);
-    } catch (error) {
-      console.error('Error updating mentor:', error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.get("/api/mentors/:id/buddies", async (req, res) => {
-    try {
-      const { status } = req.query;
-      const buddies = await storage.getMentorBuddies(req.params.id, status as string);
-      res.json(buddies);
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Mentor routes are now handled by mentorRoutes.ts
 
   // Curriculum routes
   app.get("/api/curriculum", async (req, res) => {
@@ -469,19 +434,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Task routes
-  app.post("/api/tasks", async (req, res) => {
-    try {
-      const taskData = insertTaskSchema.parse(req.body);
-      const task = await storage.createTask(taskData);
-      res.status(201).json(task);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid task data", errors: error.issues });
-      }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
 
   // Submission routes
   app.post("/api/submissions", async (req, res) => {
@@ -508,23 +460,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Mentor DELETE
-  app.delete("/api/mentors/:id", async (req, res) => {
-    try {
-      await storage.deleteMentor(req.params.id);
-      res.status(204).send();
-    } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Mentor DELETE - handled by mentorRoutes.ts
 
   // Task PATCH (update)
   app.patch("/api/tasks/:id", async (req, res) => {
     try {
       const updates = req.body;
+      // Validate that the task exists first
+      const existingTask = await storage.getTaskById(req.params.id);
+      if (!existingTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
       const task = await storage.updateTask(req.params.id, updates);
       res.json(task);
     } catch (error) {
+      console.error('Error updating task:', error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -532,9 +483,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Task DELETE
   app.delete("/api/tasks/:id", async (req, res) => {
     try {
+      // Validate that the task exists first
+      const existingTask = await storage.getTaskById(req.params.id);
+      if (!existingTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
       await storage.deleteTask(req.params.id);
       res.status(204).send();
     } catch (error) {
+      console.error('Error deleting task:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Task assignment to buddy (PATCH /api/tasks/:id/assign)
+  app.patch("/api/tasks/:id/assign", async (req, res) => {
+    try {
+      const { buddyId } = req.body;
+      
+      if (!buddyId) {
+        return res.status(400).json({ message: "Buddy ID is required" });
+      }
+      
+      // Validate task exists
+      const existingTask = await storage.getTaskById(req.params.id);
+      if (!existingTask) {
+        return res.status(404).json({ message: "Task not found" });
+      }
+      
+      // Validate buddy exists
+      const buddy = await storage.getBuddyById(buddyId);
+      if (!buddy) {
+        return res.status(404).json({ message: "Buddy not found" });
+      }
+      
+      // Update the task's buddy assignment
+      const task = await storage.updateTask(req.params.id, { buddyId });
+      res.json(task);
+    } catch (error) {
+      console.error('Error assigning task to buddy:', error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

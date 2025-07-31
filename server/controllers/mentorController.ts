@@ -144,23 +144,80 @@ export const createMentor = async (req: Request, res: Response) => {
 
 export const updateMentor = async (req: Request, res: Response) => {
   try {
+    console.log('[PUT /api/mentors/:id] Updating mentor:', req.params.id, req.body);
     const { id } = req.params;
-    const mentorData = req.body;
-    const mentor = await storage.updateMentor(id, mentorData);
-    if (!mentor) {
+    const { name, email, domainRole, expertise, experience, isActive } = req.body;
+    
+    // Get current mentor data
+    const currentMentor = await storage.getMentorById(id);
+    if (!currentMentor) {
       return res.status(404).json({ message: "Mentor not found" });
     }
-    res.json(mentor);
+    
+    // Update user info if provided
+    if (name || email || domainRole !== undefined) {
+      const userUpdates: any = {};
+      if (name) userUpdates.name = name;
+      if (email) userUpdates.email = email;
+      if (domainRole !== undefined) userUpdates.domainRole = domainRole;
+      
+      try {
+        await storage.updateUser(currentMentor.user.id, userUpdates);
+      } catch (error: any) {
+        if (error.code === 'DUPLICATE_EMAIL') {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+        throw error;
+      }
+    }
+    
+    // Update mentor-specific info
+    const mentorUpdates: any = {};
+    if (expertise !== undefined) mentorUpdates.expertise = expertise;
+    if (experience !== undefined) mentorUpdates.experience = experience;
+    if (isActive !== undefined) mentorUpdates.isActive = isActive;
+    
+    const updatedMentor = await storage.updateMentor(id, mentorUpdates);
+    
+    // Return updated mentor with user info
+    const fullMentorData = await storage.getMentorById(id);
+    console.log('[PUT /api/mentors/:id] Mentor updated successfully');
+    res.json(fullMentorData);
+    
   } catch (error) {
+    console.error('Error updating mentor:', error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
 export const deleteMentor = async (req: Request, res: Response) => {
   try {
-    await storage.deleteMentor(req.params.id);
+    console.log('[DELETE /api/mentors/:id] Deleting mentor:', req.params.id);
+    const { id } = req.params;
+    
+    // Get mentor data before deletion to get user ID
+    const mentor = await storage.getMentorById(id);
+    if (!mentor) {
+      return res.status(404).json({ message: "Mentor not found" });
+    }
+    
+    // Delete mentor record
+    await storage.deleteMentor(id);
+    
+    // Also delete the associated user account
+    if (mentor.user?.id) {
+      try {
+        await storage.deleteUser(mentor.user.id);
+        console.log('[DELETE /api/mentors/:id] Associated user deleted:', mentor.user.id);
+      } catch (error) {
+        console.warn('[DELETE /api/mentors/:id] Failed to delete user, but mentor deleted:', error);
+      }
+    }
+    
+    console.log('[DELETE /api/mentors/:id] Mentor deleted successfully');
     res.status(204).send();
   } catch (error) {
+    console.error('Error deleting mentor:', error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

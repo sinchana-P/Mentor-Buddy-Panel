@@ -9,11 +9,10 @@ import { MessageCircle, Edit, Trash2 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import MessageModal from './MessageModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { apiRequest } from '@/lib/queryClient';
+import { useUpdateMentorMutation, useDeleteMentorMutation } from '@/api/mentorsApi';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -48,10 +47,10 @@ const mentorFormSchema = z.object({
 export default function MentorCard({ mentor }: MentorCardProps) {
   const [, setLocation] = useLocation();
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
   const mentorForm = useForm({
     resolver: zodResolver(mentorFormSchema),
     defaultValues: {
@@ -61,24 +60,33 @@ export default function MentorCard({ mentor }: MentorCardProps) {
       experience: mentor.experience,
     },
   });
-  const editMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('PATCH', `/api/mentors/${mentor.id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+
+  const [updateMentor] = useUpdateMentorMutation();
+  const [deleteMentor] = useDeleteMentorMutation();
+
+  const handleUpdateMentor = async (data: any) => {
+    try {
+      if (!mentor.id) {
+        throw new Error('Mentor ID is missing');
+      }
+      await updateMentor({ id: mentor.id, mentorData: data }).unwrap();
       setIsEditOpen(false);
       toast({ title: 'Mentor updated', description: 'Mentor details updated.' });
-    },
-    onError: () => toast({ title: 'Error', description: 'Failed to update mentor', variant: 'destructive' }),
-  });
-  const deleteMutation = useMutation({
-    mutationFn: () => apiRequest('DELETE', `/api/mentors/${mentor.id}`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/mentors'] });
+    } catch (error: any) {
+      console.error('Failed to update mentor:', error);
+      toast({ title: 'Error', description: error?.message || 'Failed to update mentor', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteMentor = async () => {
+    try {
+      await deleteMentor(mentor.id).unwrap();
       setIsDeleteOpen(false);
       toast({ title: 'Mentor deleted', description: 'Mentor has been removed.' });
-    },
-    onError: () => toast({ title: 'Error', description: 'Failed to delete mentor', variant: 'destructive' }),
-  });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete mentor', variant: 'destructive' });
+    }
+  };
 
   const handleClick = () => {
     setLocation(`/mentors/${mentor.id}`);
@@ -164,7 +172,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Edit Mentor</DialogTitle></DialogHeader>
-                <form onSubmit={mentorForm.handleSubmit(data => editMutation.mutate(data))} className="space-y-4">
+                <form onSubmit={mentorForm.handleSubmit(handleUpdateMentor)} className="space-y-4">
                   <Input {...mentorForm.register('name')} placeholder="Full Name" />
                   <Select value={mentorForm.watch('domainRole')} onValueChange={v => mentorForm.setValue('domainRole', v)}>
                     <SelectTrigger><SelectValue placeholder="Domain" /></SelectTrigger>
@@ -180,7 +188,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
                   <Textarea {...mentorForm.register('experience')} placeholder="Experience" />
                   <div className="flex justify-end gap-2">
                     <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
-                    <Button type="submit" disabled={editMutation.isPending}>{editMutation.isPending ? 'Saving...' : 'Save'}</Button>
+                    <Button type="submit">Save</Button>
                   </div>
                 </form>
               </DialogContent>
@@ -194,7 +202,7 @@ export default function MentorCard({ mentor }: MentorCardProps) {
                 <p>Are you sure you want to delete this mentor?</p>
                 <div className="flex justify-end gap-2 mt-4">
                   <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
-                  <Button type="button" variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>{deleteMutation.isPending ? 'Deleting...' : 'Delete'}</Button>
+                  <Button type="button" variant="destructive" onClick={handleDeleteMentor}>Delete</Button>
                 </div>
               </DialogContent>
             </Dialog>

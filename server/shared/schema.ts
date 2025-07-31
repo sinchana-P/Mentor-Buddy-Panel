@@ -12,7 +12,7 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
   role: text("role", { enum: ["manager", "mentor", "buddy"] }).notNull(),
-  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }) as unknown as DomainRole,
+  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }).notNull(),
   avatarUrl: text("avatar_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -64,7 +64,7 @@ export const topics = pgTable("topics", {
   id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   category: text("category").notNull(),
-  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }).notNull() as unknown as DomainRole,
+  domainRole: text("domain_role", { enum: ["frontend", "backend", "devops", "qa", "hr"] }).notNull(),
 });
 
 export const buddyTopicProgress = pgTable("buddy_topic_progress", {
