@@ -187,6 +187,23 @@ app.get("/api/tasks/:id", async (req, res) => {
   }
 });
 
+app.patch("/api/tasks/:id", async (req, res) => {
+  try {
+    const updates = req.body;
+    // Validate that the task exists first
+    const existingTask = await storage.getTaskById(req.params.id);
+    if (!existingTask) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    
+    const task = await storage.updateTask(req.params.id, updates);
+    res.json(task);
+  } catch (error) {
+    console.error('Error updating task:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // Topics routes
 app.get("/api/topics", async (req, res) => {
   try {
