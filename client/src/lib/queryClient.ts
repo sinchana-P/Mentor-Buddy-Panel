@@ -10,7 +10,7 @@ async function throwIfResNotOk(res: Response) {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.PROD 
-    ? 'https://mentor-buddy-panel-backend.onrender.com' 
+    ? 'https://mentor-buddy-panel.onrender.com' 
     : 'http://localhost:3000'
 );
 
