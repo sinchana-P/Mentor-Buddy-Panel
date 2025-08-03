@@ -1,13 +1,25 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { createServer } from "http";
 
 import { log } from "./vite";
 import { config } from "./config";
+import { storage } from "./storage";
 
 import authRoutes from "./routes/authRoutes";
 import resourceRoutes from "./routes/resourceRoutes";
 import buddyRoutes from "./routes/buddyRoutes";
 import mentorRoutes from "./routes/mentorRoutes";
+
+// Import schemas for the main route handlers
+import { 
+  insertUserSchema, 
+  insertTaskSchema, 
+  insertSubmissionSchema,
+  insertTopicSchema,
+  insertCurriculumSchema
+} from "./shared/schema";
+import { z } from "zod";
 
 const app = express();
 
@@ -68,6 +80,137 @@ app.get("/", (req, res) => {
     status: "running",
     timestamp: new Date().toISOString()
   });
+});
+
+// User routes
+app.get("/api/users", async (req, res) => {
+  try {
+    const users = await storage.getAllUsers();
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/api/users/:id", async (req, res) => {
+  try {
+    const user = await storage.getUser(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/users", async (req, res) => {
+  try {
+    const userData = insertUserSchema.parse(req.body);
+    const user = await storage.createUser(userData as any);
+    res.status(201).json(user);
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid user data", errors: error.issues });
+    }
+    if (error.code === 'DUPLICATE_EMAIL') {
+      return res.status(409).json({ message: 'Email already exists' });
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Dashboard routes
+app.get("/api/dashboard/stats", async (req, res) => {
+  try {
+    const stats = await storage.getDashboardStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/api/dashboard/activity", async (req, res) => {
+  try {
+    const activity = await storage.getRecentActivity();
+    res.json(activity);
+  } catch (error) {
+    console.error('Error fetching dashboard activity:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Tasks routes
+app.get("/api/tasks", async (req, res) => {
+  try {
+    const { status, search, buddyId } = req.query;
+    const tasks = await storage.getAllTasks({
+      status: status as string,
+      search: search as string,
+      buddyId: buddyId as string
+    });
+    res.json(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/tasks", async (req, res) => {
+  try {
+    const taskData = insertTaskSchema.parse(req.body);
+    const task = await storage.createTask(taskData);
+    res.status(201).json(task);
+  } catch (error) {
+    console.error('Error creating task:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid task data", errors: error.issues });
+    }
+    res.status(500).json({ message: 'Failed to create task' });
+  }
+});
+
+app.get("/api/tasks/:id", async (req, res) => {
+  try {
+    const task = await storage.getTaskById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.json(task);
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+// Topics routes
+app.get("/api/topics", async (req, res) => {
+  try {
+    const { domain } = req.query;
+    const topics = await storage.getTopics(domain as string);
+    res.json(topics);
+  } catch (error) {
+    console.error('Error fetching topics:', error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/api/topics", async (req, res) => {
+  try {
+    const topicData = insertTopicSchema.parse(req.body);
+    const topic = await storage.createTopic(topicData as any);
+    res.status(201).json(topic);
+  } catch (error) {
+    console.error('Error creating topic:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid topic data", errors: error.issues });
+    }
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 // Register API routes
