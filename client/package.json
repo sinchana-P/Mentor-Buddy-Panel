@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "node build.js",
-    "build:vercel": "vite build",
+    "build:vercel": "npm ci --only=production && vite build",
+    "build:fast": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
