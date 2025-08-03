@@ -7,3 +7,5 @@ vite.config.ts.*
 .env
 *.bat
 *.sh
+.env.example
+*.md

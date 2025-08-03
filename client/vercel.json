@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build:fast",
   "outputDirectory": "dist",
-  "installCommand": "npm install",
+  "installCommand": "rm -rf node_modules package-lock.json && npm install",
   "devCommand": "npm run dev",
   "rewrites": [
     {

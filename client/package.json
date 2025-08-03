@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "node build.js",
-    "build:vercel": "npm ci --only=production && vite build",
+    "build:vercel": "npm install --include=optional && vite build",
     "build:fast": "vite build",
     "preview": "vite preview"
   },
@@ -84,5 +84,11 @@
     "tailwindcss": "3.4.17",
     "typescript": "5.6.3",
     "vite": "^5.4.19"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.28.1",
+    "@rollup/rollup-darwin-x64": "^4.28.1",
+    "@rollup/rollup-darwin-arm64": "^4.28.1",
+    "@rollup/rollup-win32-x64-msvc": "^4.28.1"
   }
 }
