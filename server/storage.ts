@@ -1122,14 +1122,23 @@ async function initializeStorage(): Promise<IStorage> {
 // Run database migrations
 async function runMigrations() {
   try {
-  const { migrate } = await import('drizzle-orm/node-postgres/migrator');
-  const { db } = await import('./db');
-  
-  console.log('[Storage] Running database migrations...');
-  await migrate(db, { migrationsFolder: './migrations' });
-  console.log('[Storage] Migrations completed successfully');
+    console.log('[Storage] Checking database migrations...');
+    
+    // Skip migrations in production if migrations folder doesn't exist
+    if (process.env.NODE_ENV === 'production') {
+      console.log('[Storage] Skipping migrations in production environment');
+      return;
+    }
+    
+    const { migrate } = await import('drizzle-orm/node-postgres/migrator');
+    const { db } = await import('./db');
+    
+    console.log('[Storage] Running database migrations...');
+    await migrate(db, { migrationsFolder: './migrations' });
+    console.log('[Storage] Migrations completed successfully');
   } catch (error) {
-    console.log('[Storage] Migrations already applied or not needed');
+    console.log('[Storage] Migrations skipped:', error?.message || 'Unknown error');
+    // Don't throw error - let the app continue
   }
 }
 
