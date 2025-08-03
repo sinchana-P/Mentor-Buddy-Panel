@@ -17,7 +17,11 @@ export const config = {
   SESSION_SECRET: process.env.SESSION_SECRET || 'your-super-secret-session-key-change-this-in-production',
   
   // CORS Configuration
-  CORS_ORIGIN: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  CORS_ORIGIN: process.env.CORS_ORIGIN || (
+    process.env.NODE_ENV === 'production' 
+      ? ['https://mentor-buddy-panel-123.vercel.app', 'https://mentor-buddy-panel.vercel.app']
+      : 'http://localhost:5173'
+  ),
   
   // Development Configuration
   VITE_API_URL: process.env.VITE_API_URL || 'http://localhost:3000',

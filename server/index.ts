@@ -52,6 +52,25 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health check endpoint - register early
+app.get("/api/health", (req, res) => {
+  res.json({ 
+    status: "healthy", 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
+    version: "1.0.0"
+  });
+});
+
+// Basic route for root path
+app.get("/", (req, res) => {
+  res.json({ 
+    message: "Mentor Buddy Panel API",
+    status: "running",
+    timestamp: new Date().toISOString()
+  });
+});
+
 (async () => {
   const server = await registerRoutes(app);
 

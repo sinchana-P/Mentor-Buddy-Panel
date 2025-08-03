@@ -8,9 +8,9 @@ import {
   insertTaskSchema, 
   insertSubmissionSchema,
   insertTopicSchema,
-  insertBuddyTopicProgressSchema
+  insertBuddyTopicProgressSchema,
+  insertCurriculumSchema
 } from "server/shared/schema";
-import { insertCurriculumSchema } from "server/shared/curriculum-schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {

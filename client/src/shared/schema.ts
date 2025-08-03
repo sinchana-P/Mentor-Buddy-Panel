@@ -106,47 +106,47 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertMentorSchema = createInsertSchema(mentors).omit({
   id: true,
   createdAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertBuddySchema = createInsertSchema(buddies).omit({
   id: true,
   createdAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertTaskSchema = createInsertSchema(tasks).omit({
   id: true,
   createdAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertSubmissionSchema = createInsertSchema(submissions).omit({
   id: true,
   createdAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertTopicSchema = createInsertSchema(topics).omit({
   id: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertBuddyTopicProgressSchema = createInsertSchema(buddyTopicProgress).omit({
   id: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 export const insertCurriculumSchema = createInsertSchema(curriculum).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}) as unknown as z.ZodType<any>;
 
 // Types
 export type User = typeof users.$inferSelect;

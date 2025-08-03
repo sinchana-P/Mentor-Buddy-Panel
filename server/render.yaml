@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: mentor-buddy-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mentor-buddy-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: https://mentor-buddy-panel-123.vercel.app
+
+databases:
+  - name: mentor-buddy-db
+    databaseName: mentorbuddy
+    user: mentorbuddy
+    plan: free

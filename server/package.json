@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "cross-env NODE_ENV=development PORT=3000 tsx index.ts",
-    "start": "cross-env NODE_ENV=production PORT=3000 node dist/index.js",
+    "start": "node dist/index.js",
     "build": "esbuild index.ts --bundle --platform=node --format=esm --outdir=dist",
     "check": "tsc",
     "db:push": "drizzle-kit push",

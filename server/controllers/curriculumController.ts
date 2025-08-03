@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
-import { insertCurriculumSchema } from '../shared/curriculum-schema';
+import { insertCurriculumSchema } from '../shared/schema';
 import { z } from 'zod';
 
 export const getAllCurriculum = async (req: Request, res: Response) => {
