@@ -1,8 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 
-import { registerRoutes } from "./routes";
-import { serveStatic, log } from "./vite";
+import { log } from "./vite";
 import { config } from "./config";
 
 import authRoutes from "./routes/authRoutes";
@@ -71,31 +70,24 @@ app.get("/", (req, res) => {
   });
 });
 
-(async () => {
-  const server = await registerRoutes(app);
+// Register API routes
+app.use("/api/auth", authRoutes);
+app.use("/api/resources", resourceRoutes);
+app.use("/api/buddies", buddyRoutes);
+app.use("/api/mentors", mentorRoutes);
 
-  // Global error handler
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    throw err;
-  });
+// Global error handler
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  const status = err.status || err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+  res.status(status).json({ message });
+  log(`Error: ${status} - ${message}`);
+});
 
-  // Serve static files only in production
-  if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
-  }
-
-  // Register API routes
-  app.use("/api/auth", authRoutes);
-  app.use("/api/resources", resourceRoutes);
-  app.use("/api/buddies", buddyRoutes);
-  app.use("/api/mentors", mentorRoutes);
-
-  // Final server start
-  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-  server.listen(port, () => {
-    log(`✅ Server is running on port ${port}`);
-  });
-})();
+// Start server
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+app.listen(port, "0.0.0.0", () => {
+  log(`✅ Server is running on port ${port}`);
+  log(`🔗 Environment: ${process.env.NODE_ENV || 'development'}`);
+  log(`🌐 CORS Origins: ${JSON.stringify(config.CORS_ORIGIN)}`);
+});

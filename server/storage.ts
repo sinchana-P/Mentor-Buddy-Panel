@@ -16,7 +16,7 @@ import {
   type Curriculum,
   type InsertCurriculum,
   DomainRole // <--- import DomainRole
-} from "server/shared/schema";
+} from "./shared/schema";
 import { randomUUID } from "crypto";
 
 // Extended interface with all CRUD methods needed for the mentoring platform

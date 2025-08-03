@@ -10,7 +10,7 @@ import {
   insertTopicSchema,
   insertBuddyTopicProgressSchema,
   insertCurriculumSchema
-} from "server/shared/schema";
+} from "./shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {

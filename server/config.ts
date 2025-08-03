@@ -19,7 +19,7 @@ export const config = {
   // CORS Configuration
   CORS_ORIGIN: process.env.CORS_ORIGIN || (
     process.env.NODE_ENV === 'production' 
-      ? ['https://mentor-buddy-panel-123.vercel.app', 'https://mentor-buddy-panel.vercel.app', 'https://mentor-buddy-panel-123-*.vercel.app']
+      ? ['https://mentor-buddy-panel-123.vercel.app', 'https://mentor-buddy-panel.vercel.app']
       : 'http://localhost:5173'
   ),
   
