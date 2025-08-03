@@ -1,10 +1,9 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
 
 html, body {
   font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -12,48 +11,48 @@ html, body {
 
 @layer base {
 :root {
-  /* ⚫ BACKGROUND */
-  --background: 230 30% 8%;                /* Rich deep navy */
-  --background-secondary: 228 22% 12%;
-  --background-tertiary: 228 20% 18%;
+  /* ⚫ NEUTRAL BLACK BACKGROUND */
+  --background: 0 0% 8%;                   /* Deep neutral black */
+  --background-secondary: 0 0% 12%;
+  --background-tertiary: 0 0% 16%;
 
   /* 🔤 FOREGROUND */
-  --foreground: 220 20% 98%;               /* Crisp light gray/white */
-  --foreground-secondary: 220 12% 82%;
-  --foreground-muted: 220 8% 65%;
+  --foreground: 0 0% 95%;                  /* Crisp white */
+  --foreground-secondary: 0 0% 75%;
+  --foreground-muted: 0 0% 55%;
 
-  /* 🧾 CARDS */
-  --card: 228 24% 14%;
-  --card-secondary: 228 22% 18%;
-  --card-hover: 228 24% 22%;
-  --card-foreground: 220 20% 98%;
-  --card-border: 228 16% 26%;
+  /* 🧾 NEUTRAL BLACK CARDS */
+  --card: 0 0% 14%;                        /* Neutral black card */
+  --card-secondary: 0 0% 18%;
+  --card-hover: 0 0% 20%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 25%;
 
-  /* 🔵 BRAND COLORS - More punch, better light text contrast */
-  --primary: 245 85% 65%;                  /* Vibrant indigo */
-  --primary-foreground: 0 0% 100%;
-  --secondary: 268 65% 52%;                /* Rich violet */
-  --secondary-foreground: 0 0% 100%;
-  --accent: 195 100% 55%;                  /* Vibrant cyan */
-  --accent-foreground: 0 0% 100%;
+  /* 🔵 SUBTLE ACCENT COLORS */
+  --primary: 0 0% 65%;                     /* Neutral gray for accents */
+  --primary-foreground: 0 0% 10%;
+  --secondary: 0 0% 55%;
+  --secondary-foreground: 0 0% 10%;
+  --accent: 0 0% 75%;
+  --accent-foreground: 0 0% 10%;
 
   /* 🧊 MUTED */
-  --muted: 225 15% 24%;
-  --muted-foreground: 220 10% 55%;
+  --muted: 0 0% 22%;
+  --muted-foreground: 0 0% 65%;
 
-  /* ✅ STATUS */
-  --success: 142 70% 45%;
+  /* ✅ STATUS - Subtle versions */
+  --success: 142 50% 50%;
   --success-foreground: 0 0% 100%;
-  --warning: 40 100% 55%;
-  --warning-foreground: 0 0% 0%;
-  --destructive: 0 85% 60%;
+  --warning: 40 80% 60%;
+  --warning-foreground: 0 0% 10%;
+  --destructive: 0 70% 65%;
   --destructive-foreground: 0 0% 100%;
 
   /* 🎯 INTERACTION */
-  --border: 228 12% 26%;
-  --border-hover: 228 14% 34%;
-  --input: 228 22% 16%;
-  --ring: 245 85% 65%;
+  --border: 0 0% 25%;
+  --border-hover: 0 0% 35%;
+  --input: 0 0% 16%;
+  --ring: 0 0% 65%;
 
   /* 🧱 SPACING */
   --radius-sm: 0.5rem;
@@ -61,9 +60,11 @@ html, body {
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
 
-  /* 🌫️ SHADOWS */
-  --shadow-premium: 0 8px 28px rgba(0, 0, 0, 0.25);
-  --shadow-glass: 0 12px 28px rgba(102, 126, 234, 0.18);
+  /* 🌫️ NEUMORPHISM SHADOWS */
+  --shadow-neumorphism-light: 0 8px 16px rgba(255, 255, 255, 0.1);
+  --shadow-neumorphism-dark: 0 8px 16px rgba(0, 0, 0, 0.3);
+  --shadow-neumorphism-inset-light: inset 0 2px 4px rgba(255, 255, 255, 0.1);
+  --shadow-neumorphism-inset-dark: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 
@@ -83,11 +84,7 @@ html, body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: hsl(var(--background));
-    background-image: 
-      radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 40% 40%, rgba(102, 126, 234, 0.1) 0%, transparent 50%);
-    background-attachment: fixed;
+    /* Clean neutral black background - no gradients for premium minimal look */
   }
   
   /* Smooth transitions for premium feel */
@@ -95,7 +92,7 @@ html, body {
     @apply transition-all duration-300 ease-out;
   }
   
-  /* Premium scrollbar */
+  /* Neutral scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -107,35 +104,34 @@ html, body {
   }
   
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: hsl(var(--muted));
     border-radius: 4px;
     transition: all 0.3s ease;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #7c8aed 0%, #8458b5 100%);
+    background: hsl(var(--border-hover));
   }
 }
 
 @layer components {
-  /* Premium Card System */
+  /* Neumorphism Card System */
   .premium-card {
-    @apply relative overflow-hidden rounded-xl border p-6;
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.1) 0%,
-      rgba(255, 255, 255, 0.05) 100%
-    );
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: var(--shadow-glass);
+    @apply relative rounded-xl border p-6;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--card-border));
+    box-shadow: 
+      var(--shadow-neumorphism-dark),
+      var(--shadow-neumorphism-light);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .premium-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.5);
-    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 
+      0 12px 20px rgba(0, 0, 0, 0.4),
+      0 4px 8px rgba(255, 255, 255, 0.1);
+    background: hsl(var(--card-hover));
   }
   
   .premium-card::before {
@@ -150,61 +146,55 @@ html, body {
   
   .glass-card {
     @apply premium-card;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--card-secondary));
+    border: 1px solid hsl(var(--card-border));
+    box-shadow: 
+      var(--shadow-neumorphism-inset-dark),
+      var(--shadow-neumorphism-inset-light);
   }
   
-  /* Gradient Cards */
+  /* Neumorphism Cards */
   .gradient-card {
-    @apply relative overflow-hidden rounded-xl p-6 text-white;
+    @apply relative rounded-xl p-6;
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--card-border));
+    box-shadow: 
+      var(--shadow-neumorphism-dark),
+      var(--shadow-neumorphism-light);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .gradient-card:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-  }
-  
-  .gradient-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: inherit;
-    filter: brightness(1.1);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .gradient-card:hover::before {
-    opacity: 1;
+    transform: translateY(-2px);
+    box-shadow: 
+      0 16px 24px rgba(0, 0, 0, 0.4),
+      0 6px 12px rgba(255, 255, 255, 0.1);
+    background: hsl(var(--card-hover));
   }
   
   .gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: hsl(var(--card));
   }
   
   .gradient-secondary {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    background: hsl(var(--card));
   }
   
   .gradient-accent {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    background: hsl(var(--card));
   }
   
   .gradient-success {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    background: hsl(var(--card));
   }
   
   .gradient-purple {
-    background: linear-gradient(135deg, #a855f7 0%, #3b82f6 100%);
+    background: hsl(var(--card));
   }
   
   .gradient-orange {
-    background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    background: hsl(var(--card));
   }
   
   /* Premium Buttons */
@@ -232,29 +222,39 @@ html, body {
   }
   
   .btn-gradient {
-    @apply btn-premium text-white;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    @apply btn-premium;
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 
+      var(--shadow-neumorphism-dark),
+      var(--shadow-neumorphism-light);
   }
   
   .btn-gradient:hover {
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+    box-shadow: 
+      0 8px 16px rgba(0, 0, 0, 0.4),
+      0 2px 4px rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
+    background: hsl(var(--card-hover));
   }
   
   /* Premium Inputs */
   .input-premium {
-    @apply w-full px-4 py-3 rounded-lg border bg-transparent;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    @apply w-full px-4 py-3 rounded-lg border;
+    background: hsl(var(--input));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+    box-shadow: var(--shadow-neumorphism-inset-dark);
     transition: all 0.3s ease;
   }
   
   .input-premium:focus {
-    border-color: hsl(var(--primary));
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 
+      var(--shadow-neumorphism-inset-dark),
+      0 0 0 2px rgba(255, 255, 255, 0.1);
+    background: hsl(var(--card));
   }
   
   /* Status Badges */
@@ -313,22 +313,46 @@ html, body {
     animation: pulsePremium 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
   
-  /* Hover effects */
+  /* Neumorphism Hover effects */
   .hover-lift {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .hover-lift:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: 
+      0 16px 32px rgba(0, 0, 0, 0.4),
+      0 8px 16px rgba(255, 255, 255, 0.1);
+  }
+
+  /* Neumorphism Button Effects */
+  .neumorphism-btn {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: 
+      var(--shadow-neumorphism-dark),
+      var(--shadow-neumorphism-light);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .neumorphism-btn:hover {
+    box-shadow: 
+      var(--shadow-neumorphism-inset-dark),
+      var(--shadow-neumorphism-inset-light);
+    background: hsl(var(--card-hover));
+  }
+
+  .neumorphism-btn:active {
+    box-shadow: 
+      var(--shadow-neumorphism-inset-dark),
+      var(--shadow-neumorphism-inset-light);
+    transform: translateY(1px);
   }
   
   /* Typography */
   .text-gradient {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: hsl(var(--foreground));
+    font-weight: 600;
   }
   
   .text-premium {
@@ -339,12 +363,273 @@ html, body {
   .loading-shimmer {
     background: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.05) 25%,
-      rgba(255, 255, 255, 0.15) 50%,
-      rgba(255, 255, 255, 0.05) 75%
+      hsl(var(--card)) 25%,
+      hsl(var(--card-hover)) 50%,
+      hsl(var(--card)) 75%
     );
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
+  }
+
+  /* CRITICAL: Fix Modal Positioning */
+  [data-radix-dialog-overlay] {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0, 0, 0, 0.7) !important;
+    backdrop-filter: blur(8px) !important;
+    z-index: 9998 !important;
+    animation: none !important;
+  }
+
+  [data-radix-dialog-content] {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    background: hsl(var(--card)) !important;
+    color: hsl(var(--foreground)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4) !important;
+    z-index: 9999 !important;
+    padding: 24px !important;
+    min-width: 400px !important;
+    animation: none !important;
+  }
+
+  /* Dialog Portal positioning */
+  [data-radix-dialog-portal] {
+    z-index: 9998 !important;
+  }
+
+  /* Modal content shouldn't inherit transforms */
+  [data-radix-dialog-content] * {
+    position: relative !important;
+  }
+
+  /* Modal content styling */
+  .fixed-modal h2,
+  .fixed-modal h3,
+  .fixed-modal label,
+  .fixed-modal p {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Modal form inputs */
+  .fixed-modal input,
+  .fixed-modal textarea,
+  .fixed-modal select {
+    background: hsl(var(--input)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .fixed-modal input:focus,
+  .fixed-modal textarea:focus,
+  .fixed-modal select:focus {
+    border-color: hsl(var(--ring)) !important;
+    background: hsl(var(--card)) !important;
+  }
+
+  /* Modal buttons */
+  .fixed-modal button {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Dialog Text Styling */
+  [data-radix-dialog-title] {
+    color: hsl(var(--foreground)) !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+  }
+
+  [data-radix-dialog-description] {
+    color: hsl(var(--muted-foreground)) !important;
+    font-size: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Dialog form elements */
+  [data-radix-dialog-content] input,
+  [data-radix-dialog-content] textarea,
+  [data-radix-dialog-content] select {
+    background: hsl(var(--input)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-radius: 6px !important;
+    padding: 8px 12px !important;
+  }
+
+  [data-radix-dialog-content] label {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500 !important;
+    margin-bottom: 4px !important;
+    display: block !important;
+  }
+
+  [data-radix-dialog-content] button {
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+  }
+
+  /* Dropdown improvements */
+  .dropdown-content {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    box-shadow: 
+      var(--shadow-neumorphism-dark),
+      var(--shadow-neumorphism-light) !important;
+  }
+
+  .dropdown-item {
+    color: hsl(var(--foreground)) !important;
+    padding: 8px 12px !important;
+    transition: all 0.2s ease !important;
+    background: transparent !important;
+  }
+
+  .dropdown-item:hover {
+    background: hsl(var(--card-hover)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .dropdown-item[data-highlighted] {
+    background: hsl(var(--card-hover)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* CRITICAL: Fix Radix UI Select dropdown positioning */
+  [data-radix-select-viewport] {
+    position: relative !important;
+    z-index: 10000 !important;
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+  }
+
+  [data-radix-select-content] {
+    position: relative !important;
+    z-index: 10000 !important;
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden !important;
+    /* Force proper positioning */
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+
+  /* Force Radix Portal to behave */
+  [data-radix-portal] {
+    z-index: 10000 !important;
+  }
+
+  [data-radix-select-portal] {
+    z-index: 10000 !important;
+  }
+
+  [data-radix-popper-content-wrapper] {
+    z-index: 10000 !important;
+  }
+
+  /* Ensure trigger has proper stacking */
+  [data-radix-select-trigger] {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Override all Radix positioning attributes */
+  [data-radix-select-content][data-state],
+  [data-radix-select-content][data-side],
+  [data-radix-select-content][data-align] {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  [data-radix-select-item] {
+    color: hsl(var(--foreground)) !important;
+    background: transparent !important;
+    position: relative !important;
+    padding: 8px 12px !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    border: none !important;
+    outline: none !important;
+  }
+
+  [data-radix-select-item]:hover,
+  [data-radix-select-item][data-highlighted],
+  [data-radix-select-item]:focus {
+    background: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
+    outline: none !important;
+  }
+
+  /* Hide the tick mark indicator completely */
+  [data-radix-select-item-indicator] {
+    display: none !important;
+  }
+
+  [data-radix-select-item] > span:first-child {
+    display: none !important;
+  }
+
+  /* Remove any icons or check marks */
+  [data-radix-select-item] svg {
+    display: none !important;
+  }
+
+  /* Additional Select styling overrides */
+  .select-content {
+    background: hsl(var(--card)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .select-item {
+    color: hsl(var(--foreground)) !important;
+    background: transparent !important;
+    padding: 8px 12px !important;
+  }
+
+  .select-item:hover,
+  .select-item[data-highlighted] {
+    background: hsl(var(--card-hover)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Label styling */
+  .form-label {
+    color: hsl(var(--foreground)) !important;
+    font-weight: 500;
+  }
+
+  /* Placeholder text */
+  ::placeholder {
+    color: hsl(var(--foreground-muted)) !important;
+  }
+
+  /* Select trigger styling */
+  .select-trigger {
+    background: hsl(var(--input)) !important;
+    border: 1px solid hsl(var(--border)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .select-trigger:focus {
+    border-color: hsl(var(--ring)) !important;
+    background: hsl(var(--card)) !important;
   }
 }
 

@@ -82,21 +82,21 @@ export default function BuddiesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'inactive': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'exited': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'active': return 'bg-green-500/20 text-green-300';
+      case 'inactive': return 'bg-yellow-500/20 text-yellow-300';
+      case 'exited': return 'bg-red-500/20 text-red-300';
+      default: return 'bg-white/10 text-gray-300';
     }
   };
 
   const getDomainColor = (domain: string) => {
     switch (domain) {
-      case 'frontend': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'backend': return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'devops': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
-      case 'qa': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200';
-      case 'hr': return 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'frontend': return 'bg-white/10 text-blue-300';
+      case 'backend': return 'bg-white/10 text-purple-300';
+      case 'devops': return 'bg-white/10 text-orange-300';
+      case 'qa': return 'bg-white/10 text-pink-300';
+      case 'hr': return 'bg-white/10 text-teal-300';
+      default: return 'bg-white/10 text-gray-300';
     }
   };
 
@@ -192,7 +192,7 @@ export default function BuddiesPage() {
                 <SelectTrigger className="w-[140px] input-premium">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
-                <SelectContent className="premium-card border-white/10">
+                <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="inactive">Inactive</SelectItem>
@@ -204,7 +204,7 @@ export default function BuddiesPage() {
                 <SelectTrigger className="w-[140px] input-premium">
                   <SelectValue placeholder="All Domains" />
                 </SelectTrigger>
-                <SelectContent className="premium-card border-white/10">
+                <SelectContent>
                   <SelectItem value="all">All Domains</SelectItem>
                   <SelectItem value="frontend">Frontend</SelectItem>
                   <SelectItem value="backend">Backend</SelectItem>
@@ -222,17 +222,10 @@ export default function BuddiesPage() {
                   </button>
                 </DialogTrigger>
               
-              <DialogContent className="sm:max-w-[500px] premium-card border-white/10">
+              <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-8 h-8 gradient-success rounded-lg flex items-center justify-center">
-                      <UserPlus className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-xl font-bold text-premium">Add New Buddy</DialogTitle>
-                      <DialogDescription className="text-foreground-secondary">Create a new buddy profile for mentorship tracking.</DialogDescription>
-                    </div>
-                  </div>
+                  <DialogTitle>Add New Buddy</DialogTitle>
+                  <DialogDescription>Create a new buddy profile for mentorship tracking.</DialogDescription>
                 </DialogHeader>
                 
                 <Form {...buddyForm}>
@@ -242,7 +235,7 @@ export default function BuddiesPage() {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Full Name</FormLabel>
+                          <FormLabel className="form-label">Full Name</FormLabel>
                           <FormControl>
                             <Input placeholder="Enter buddy's full name" {...field} />
                           </FormControl>
@@ -256,7 +249,7 @@ export default function BuddiesPage() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel className="form-label">Email</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="buddy@example.com" {...field} />
                           </FormControl>
@@ -270,7 +263,7 @@ export default function BuddiesPage() {
                       name="domainRole"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Domain</FormLabel>
+                          <FormLabel className="form-label">Domain</FormLabel>
                           <Select value={field.value} onValueChange={field.onChange}>
                             <FormControl>
                               <SelectTrigger>
@@ -327,7 +320,7 @@ export default function BuddiesPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredBuddies.map((buddy, index) => (
               <motion.div
                 key={buddy.id}
@@ -339,94 +332,91 @@ export default function BuddiesPage() {
                   type: "spring",
                   bounce: 0.3
                 }}
-                className="hover-lift"
+                className="hover-lift h-full"
               >
-                <Link href={`/buddies/${buddy.id}`}>
-                  <div className="premium-card cursor-pointer group relative overflow-hidden">
-                    <div className="absolute inset-0 gradient-success opacity-5 group-hover:opacity-10 transition-opacity duration-300"></div>
-                    
-                    <div className="relative z-10">
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div className="relative">
-                            <Avatar className="h-12 w-12 ring-2 ring-white/20">
-                              <AvatarImage src={buddy.user.avatarUrl} />
-                              <AvatarFallback className="bg-gradient-success text-white font-semibold">
-                                {buddy.user.name.split(' ').map(n => n[0]).join('')}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${
-                              buddy.status === 'active' ? 'bg-green-500' : 
-                              buddy.status === 'inactive' ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}></div>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className="font-semibold text-white text-lg truncate">{buddy.user.name}</h3>
-                            <p className="text-sm text-white/60 truncate">{buddy.user.email}</p>
-                          </div>
+                <Link href={`/buddies/${buddy.id}`} className="block h-full">
+                  <div 
+                    className="premium-card cursor-pointer group relative h-full flex flex-col"
+                    style={{ minHeight: '260px', maxHeight: '260px' }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className="relative flex-shrink-0">
+                          <Avatar className="h-12 w-12 ring-2 ring-white/10">
+                            <AvatarImage src={buddy.user.avatarUrl} />
+                            <AvatarFallback className="bg-gradient-to-br from-white/20 to-white/10 text-white font-semibold text-sm">
+                              {buddy.user.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${
+                            buddy.status === 'active' ? 'bg-green-500' : 
+                            buddy.status === 'inactive' ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}></div>
                         </div>
-                        <div className={`status-${buddy.status} ml-2`}>
-                          {buddy.status}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-white text-base truncate">{buddy.user.name}</h3>
+                          <p className="text-xs text-white/60 truncate">{buddy.user.email}</p>
                         </div>
                       </div>
-
-                      {/* Content */}
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/70">Domain:</span>
-                          <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-                            buddy.domainRole === 'frontend' ? 'bg-blue-500/20 text-blue-300' :
-                            buddy.domainRole === 'backend' ? 'bg-purple-500/20 text-purple-300' :
-                            buddy.domainRole === 'devops' ? 'bg-orange-500/20 text-orange-300' :
-                            buddy.domainRole === 'qa' ? 'bg-pink-500/20 text-pink-300' :
-                            'bg-teal-500/20 text-teal-300'
-                          }`}>
-                            {buddy.domainRole}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/70">Mentor:</span>
-                          <span className="text-sm font-medium text-white">
-                            {buddy.mentor?.name || 'Not assigned'}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/70">Progress:</span>
-                          <span className="text-sm font-medium text-white">
-                            {buddy.stats.completedTasks}/{buddy.stats.totalTasks} tasks
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-white/70">Started:</span>
-                          <span className="text-sm text-white/80">
-                            {new Date(buddy.startDate).toLocaleDateString()}
-                          </span>
-                        </div>
-
-                        {buddy.stats.totalTasks > 0 && (
-                          <div className="mt-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <span className="text-xs text-white/60">Task Completion</span>
-                              <span className="text-xs text-white/80">
-                                {Math.round((buddy.stats.completedTasks / buddy.stats.totalTasks) * 100)}%
-                              </span>
-                            </div>
-                            <div className="progress-premium">
-                              <div 
-                                className="progress-bar"
-                                style={{ 
-                                  width: `${(buddy.stats.completedTasks / buddy.stats.totalTasks) * 100}%` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
+                      <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${
+                        buddy.status === 'active' ? 'bg-green-500/20 text-green-300' :
+                        buddy.status === 'inactive' ? 'bg-yellow-500/20 text-yellow-300' :
+                        'bg-red-500/20 text-red-300'
+                      }`}>
+                        {buddy.status}
                       </div>
                     </div>
+
+                    {/* Content - Compact */}
+                    <div className="flex-1 space-y-1.5 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/70 text-xs">Domain:</span>
+                        <div className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                          buddy.domainRole === 'frontend' ? 'bg-white/10 text-blue-300' :
+                          buddy.domainRole === 'backend' ? 'bg-white/10 text-purple-300' :
+                          buddy.domainRole === 'devops' ? 'bg-white/10 text-orange-300' :
+                          buddy.domainRole === 'qa' ? 'bg-white/10 text-pink-300' :
+                          'bg-white/10 text-teal-300'
+                        }`}>
+                          {buddy.domainRole}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/70 text-xs">Mentor:</span>
+                        <span className="font-medium text-white text-xs truncate max-w-20" title={buddy.mentor?.name || 'Not assigned'}>
+                          {buddy.mentor?.name || 'Not assigned'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-white/70 text-xs">Tasks:</span>
+                        <span className="font-medium text-white text-xs">
+                          {buddy.stats.completedTasks}/{buddy.stats.totalTasks}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar - Compact bottom */}
+                    {buddy.stats.totalTasks > 0 && (
+                      <div className="mt-2 pt-2 border-t border-white/10">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs text-white/60">Progress</span>
+                          <span className="text-xs text-white/80 font-medium">
+                            {Math.round((buddy.stats.completedTasks / buddy.stats.totalTasks) * 100)}%
+                          </span>
+                        </div>
+                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-green-400/60 to-green-300/80 rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${(buddy.stats.completedTasks / buddy.stats.totalTasks) * 100}%` 
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Link>
               </motion.div>

@@ -99,13 +99,13 @@ export default function MentorsPage() {
         >
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-6 space-y-4 lg:space-y-0">
             <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 gradient-primary rounded-xl flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-white" />
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 gradient-primary rounded-xl flex items-center justify-center mt-1">
+                  <Crown className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gradient">Mentors</h1>
-                  <div className="flex items-center gap-2 mt-1">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold text-gradient mb-2">Mentors</h1>
+                  <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-purple-400" />
                     <p className="text-foreground-secondary">Premium mentor management system</p>
                   </div>
@@ -119,7 +119,7 @@ export default function MentorsPage() {
                   Add Mentor
                 </button>
               </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] premium-card border-white/10">
+            <DialogContent className="sm:max-w-[500px] premium-card border-white/10 fixed-modal">
               <DialogHeader>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
@@ -135,7 +135,7 @@ export default function MentorsPage() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Full Name</FormLabel>
+                        <FormLabel className="form-label">Full Name</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter mentor's full name" {...field} />
                         </FormControl>
@@ -148,7 +148,7 @@ export default function MentorsPage() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="form-label">Email</FormLabel>
                         <FormControl>
                           <Input type="email" placeholder="Enter email address" {...field} />
                         </FormControl>
@@ -161,7 +161,7 @@ export default function MentorsPage() {
                     name="domainRole"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Domain Role</FormLabel>
+                        <FormLabel className="form-label">Domain Role</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -185,7 +185,7 @@ export default function MentorsPage() {
                     name="expertise"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Expertise</FormLabel>
+                        <FormLabel className="form-label">Expertise</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Describe technical expertise and skills..."
@@ -201,7 +201,7 @@ export default function MentorsPage() {
                     name="experience"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Experience</FormLabel>
+                        <FormLabel className="form-label">Experience</FormLabel>
                         <FormControl>
                           <Textarea 
                             placeholder="Describe work experience and background..."
@@ -257,7 +257,7 @@ export default function MentorsPage() {
               <SelectTrigger className="w-[180px] input-premium">
                 <SelectValue placeholder="All Roles" />
               </SelectTrigger>
-              <SelectContent className="premium-card border-white/10">
+              <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="frontend">Frontend</SelectItem>
                 <SelectItem value="backend">Backend</SelectItem>
@@ -270,7 +270,7 @@ export default function MentorsPage() {
               <SelectTrigger className="w-[180px] input-premium">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
-              <SelectContent className="premium-card border-white/10">
+              <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="inactive">Inactive</SelectItem>
@@ -308,7 +308,7 @@ export default function MentorsPage() {
                   type: "spring",
                   bounce: 0.3
                 }}
-                className="hover-lift"
+                className="hover-lift h-full" // Added h-full for consistent height
               >
                 <MentorCard mentor={mentor} />
               </motion.div>

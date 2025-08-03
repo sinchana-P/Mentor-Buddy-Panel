@@ -56,75 +56,86 @@ export default function Layout({ children, theme, setTheme }: LayoutProps) {
   };
 
   const Sidebar = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-6 border-b border-border">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">MB</span>
+    <div className="flex flex-col h-full premium-card">
+      {/* User Profile Section - Top */}
+      <div className="p-6 border-b border-white/10">
+        <div className="text-center">
+          <div className="w-20 h-20 bg-gradient-to-br from-white/20 to-white/10 rounded-full flex items-center justify-center ring-2 ring-white/10 mx-auto mb-4">
+            <span className="text-2xl font-bold text-white">
+              {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
+            </span>
           </div>
-          <span className="text-xl font-bold text-foreground">MentorBuddy</span>
+          <h3 className="text-lg font-bold text-white mb-1">
+            {user?.name || 'James Black'}
+          </h3>
+          <p className="text-sm text-white/60 mb-2">
+            {user?.email || 'jamesblack@gmail.com'}
+          </p>
         </div>
         {isMobile && (
-          <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(false)}>
+          <button 
+            className="absolute top-4 right-4 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-white/60 hover:text-white"
+            onClick={() => setSidebarOpen(false)}
+          >
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         )}
       </div>
 
+      {/* Navigation */}
       <ScrollArea className="flex-1 px-3">
         <div className="space-y-1 py-4">
           {navigation.map((item) => {
             const Icon = item.icon;
+            const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActive(item.href) ? "secondary" : "ghost"}
+                <button
                   className={cn(
-                    "w-full justify-start",
-                    isActive(item.href) && "bg-accent text-accent-foreground"
+                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-left",
+                    active 
+                      ? "bg-white/10 text-white shadow-sm" 
+                      : "hover:bg-white/5 text-white/70 hover:text-white"
                   )}
                   onClick={() => isMobile && setSidebarOpen(false)}
                 >
-                  <Icon className="mr-3 h-4 w-4" />
-                  {item.name}
-                </Button>
+                  <Icon className={cn(
+                    "h-5 w-5 transition-colors",
+                    active ? "text-white" : "text-white/60"
+                  )} />
+                  <span className={cn(
+                    "font-medium",
+                    active ? "text-white" : "text-white/70"
+                  )}>
+                    {item.name}
+                  </span>
+                </button>
               </Link>
             );
           })}
         </div>
       </ScrollArea>
 
-      <div className="p-3 border-t border-border">
-        <div className="flex items-center space-x-3 mb-3 px-3">
-          <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium">
-              {user?.name?.split(' ').map(n => n[0]).join('') || 'U'}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
-              {user?.name}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">
-              {user?.role} • {user?.domainRole}
-            </p>
-          </div>
-        </div>
-        
-        <div className="space-y-1">
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="mr-3 h-4 w-4" />
-            Settings
-          </Button>
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-            onClick={handleSignOut}
-          >
-            <LogOut className="mr-3 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
+      {/* Bottom Actions */}
+      <div className="p-3 border-t border-white/10 space-y-1">
+        <Link href="/settings">
+          <button className={cn(
+            "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors",
+            isActive('/settings') 
+              ? "bg-white/10 text-white shadow-sm"
+              : "hover:bg-white/5 text-white/70 hover:text-white"
+          )}>
+            <Settings className="h-5 w-5" />
+            <span className="font-medium">Settings</span>
+          </button>
+        </Link>
+        <button 
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-500/10 text-red-400 hover:text-red-300 transition-colors"
+          onClick={handleSignOut}
+        >
+          <LogOut className="h-5 w-5" />
+          <span className="font-medium">Log out</span>
+        </button>
       </div>
     </div>
   );
@@ -141,7 +152,7 @@ export default function Layout({ children, theme, setTheme }: LayoutProps) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r border-white/10 transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
         isMobile && !sidebarOpen && "-translate-x-full"
       )}>
         <Sidebar />
